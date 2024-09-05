@@ -225,6 +225,7 @@ bool hasIntersectionAndPrint(const std::unordered_set<T> &set1, const std::unord
     }
 }
 
+// Two integers are given, as well as two operations – "add 3" and "multiply by 2". Find the minimum sequence of operations that allows you to get the second number from the first (bidirectional search).
 void task4(int start_value = 2, int end_value = 10000)
 {
 
