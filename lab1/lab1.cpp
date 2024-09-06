@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <set>
+#include <vector>
 
 struct Node
 {
@@ -13,54 +14,49 @@ struct Node
     Node(int val, int parent_id) : value(val), parent_id(parent_id) {}
 };
 
-void printSequenceLength(const std::deque<Node> &nodes, int index)
+void printDequeAsPath(const std::deque<int> &deq)
 {
-    if (index < 0 || index >= nodes.size())
+    for (size_t i = 0; i < deq.size(); ++i)
     {
-        std::cout << "Invalid index" << std::endl;
-        return;
+        std::cout << deq[i];
+        if (i != deq.size() - 1)
+        {
+            std::cout << " -> ";
+        }
     }
-
-    int nodes_count = 0;
-    while (index != -1)
-    {
-        nodes_count += 1;
-        index = nodes[index].parent_id;
-    }
-    int operations = nodes_count - 1;
-    std::cout << "Count: " << operations << std::endl;
+    std::cout << std::endl;
 }
 
-void printPathToRoot(const std::deque<Node> &nodes, int index)
+std::deque<int> getPath(const std::deque<Node> &nodes, int index)
 {
+    std::deque<int> path;
+
     if (index < 0 || index >= nodes.size())
     {
         std::cout << "Invalid index" << std::endl;
-        return;
+        return path;
     }
 
     while (true)
     {
-        if (index != 0)
+        if (index != -1)
         {
-            std::cout << nodes[index].value << " -> ";
+            path.emplace_back(nodes[index].value);
             index = nodes[index].parent_id;
         }
         else
         {
-            std::cout << nodes[index].value << std::endl;
             break;
         }
     }
+    return path;
 }
 
 // Two integers are given, as well as two operations – "add 3" and "multiply by 2". Find the minimum sequence of operations that allows you to get the second number from the first.
-void task1(int start_value = 2, int end_value = 10000)
+std::deque<int> task1(int start_value = 2, int end_value = 10000)
 {
     std::unordered_set<int> passed_values;
     std::deque<Node> nodes;
-
-    auto start = std::chrono::high_resolution_clock::now();
 
     nodes.emplace_back(start_value, -1);
     int index = 0;
@@ -91,20 +87,16 @@ void task1(int start_value = 2, int end_value = 10000)
         index += 1;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Executed time: " << duration.count() << " microseconds" << std::endl;
-    printPathToRoot(nodes, nodes.size() - 1);
-    printSequenceLength(nodes, nodes.size() - 1);
+    auto result = getPath(nodes, nodes.size() - 1);
+    reverse(result.begin(), result.end());
+    return result;
 }
 
 // Two integers are given, as well as two operations – "add 3", "multiply by 2" and "subtract 2". Find the minimum sequence of operations that allows you to get the second number from the first.
-void task2(int start_value = 2, int end_value = 10000)
+std::deque<int> task2(int start_value = 2, int end_value = 10000)
 {
     std::unordered_set<int> passed_values;
     std::deque<Node> nodes;
-
-    auto start = std::chrono::high_resolution_clock::now();
 
     nodes.emplace_back(start_value, -1);
     int index = 0;
@@ -145,21 +137,16 @@ void task2(int start_value = 2, int end_value = 10000)
 
         index += 1;
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Executed time: " << duration.count() << " microseconds" << std::endl;
-    printPathToRoot(nodes, nodes.size() - 1);
-    printSequenceLength(nodes, nodes.size() - 1);
+    auto result = getPath(nodes, nodes.size() - 1);
+    reverse(result.begin(), result.end());
+    return result;
 }
 
 // Two integers are given, as well as two operations – "add 3" and "multiply by 2". Find the minimum sequence of operations that allows you to get the second number from the first (backwards).
-void task3(int start_value = 10000, int end_value = 2)
+std::deque<int> task3(int start_value = 10000, int end_value = 2)
 {
     std::unordered_set<int> passed_values;
     std::deque<Node> nodes;
-
-    auto start = std::chrono::high_resolution_clock::now();
 
     nodes.emplace_back(start_value, -1);
     int index = 0;
@@ -193,40 +180,55 @@ void task3(int start_value = 10000, int end_value = 2)
         index += 1;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Executed time: " << duration.count() << " microseconds" << std::endl;
-    printPathToRoot(nodes, nodes.size() - 1);
-    printSequenceLength(nodes, nodes.size() - 1);
+    auto result = getPath(nodes, nodes.size() - 1);
+    reverse(result.begin(), result.end());
+    return result;
 }
 
 template <typename T>
-bool hasIntersection(const std::unordered_set<T> &set1, const std::unordered_set<T> &set2)
+bool unorderedSetHasIntersection(const std::unordered_set<T> &set1, const std::unordered_set<T> &set2)
 {
     return std::any_of(set1.begin(), set1.end(), [&](const T &elem)
                        { return set2.find(elem) != set2.end(); });
 }
 
 template <typename T>
-bool hasIntersectionAndPrint(const std::unordered_set<T> &set1, const std::unordered_set<T> &set2)
+int unorderedSetIntersection(const std::unordered_set<T> &set1, const std::unordered_set<T> &set2)
 {
     auto it = std::find_if(set1.begin(), set1.end(), [&set2](const T &elem)
                            { return set2.find(elem) != set2.end(); });
 
-    if (it != set1.end())
+    return *it;
+}
+
+int indexByValue(const std::deque<Node> &nodes, int value)
+{
+    int index;
+    for (int i = nodes.size() - 1; i >= 0; i--)
     {
-        std::cout << "first Intersection: " << *it << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "no Intersection" << std::endl;
-        return false;
+        if (nodes[i].value == value)
+        {
+            index = i;
+            break;
+        }
     }
 }
 
+std::deque<int> mergeNodesQeque(const std::deque<Node> &left_nodes, const std::deque<Node> &right_nodes, int intersection)
+{
+    int left_index = indexByValue(left_nodes, intersection);
+    int right_index = indexByValue(right_nodes, intersection);
+
+    auto left_path = getPath(left_nodes, left_index);
+    reverse(left_path.begin(), left_path.end());
+    auto right_path = getPath(right_nodes, right_nodes[right_index].parent_id);
+
+    left_path.insert(left_path.end(), right_path.begin(), right_path.end());
+    return left_path;
+}
+
 // Two integers are given, as well as two operations – "add 3" and "multiply by 2". Find the minimum sequence of operations that allows you to get the second number from the first (bidirectional search).
-void task4(int start_value = 2, int end_value = 10000)
+std::deque<int> task4(int start_value = 2, int end_value = 10000)
 {
 
     std::unordered_set<int> left_passed_values;
@@ -235,13 +237,13 @@ void task4(int start_value = 2, int end_value = 10000)
     std::deque<Node> left_nodes;
     std::deque<Node> right_nodes;
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     left_nodes.emplace_back(start_value, -1);
     right_nodes.emplace_back(end_value, -1);
 
     int left_index = 0;
     int right_index = 0;
+
+    std::deque<int> result;
 
     while (true)
     {
@@ -275,9 +277,10 @@ void task4(int start_value = 2, int end_value = 10000)
             }
         }
 
-        if (hasIntersection(right_passed_values, left_passed_values))
+        if (unorderedSetHasIntersection(right_passed_values, left_passed_values))
         {
-            hasIntersectionAndPrint(right_passed_values, left_passed_values);
+            int intersection = unorderedSetIntersection(right_passed_values, left_passed_values);
+            result = mergeNodesQeque(left_nodes, right_nodes, intersection);
             break;
         }
 
@@ -285,23 +288,36 @@ void task4(int start_value = 2, int end_value = 10000)
         right_index += 1;
     }
 
+    return result;
+}
+
+void executeFunction(int start_value, int end_value, std::deque<int> (*function)(int, int))
+{
+    auto start = std::chrono::high_resolution_clock::now();
+    auto result = function(start_value, end_value);
     auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Executed time: " << duration.count() << " microseconds" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Executed time: " << duration.count() << " milliseconds" << std::endl;
+    printDequeAsPath(result);
+    std::cout << "Operations: " << result.size() - 1 << std::endl;
 }
 
 int main()
 {
-    int start_value = 2;
-    int end_value = 1000001;
+    int start_value = 1;
+    int end_value = 10001;
+
     std::cout << "\nTask 1: " << start_value << " -> " << end_value << std::endl;
-    task1(start_value, end_value);
+    executeFunction(start_value, end_value, task1);
+
     std::cout << "\nTask 2: " << start_value << " -> " << end_value << std::endl;
-    task2(start_value, end_value);
-    std::cout << "\nTask 3: " << end_value << " -> " << start_value << std::endl;
-    task3(end_value, start_value);
+    executeFunction(start_value, end_value, task2);
+
+    std::cout << "\nTask 3: " << start_value << " -> " << end_value << std::endl;
+    executeFunction(end_value, start_value, task3);
+
     std::cout << "\nTask 4: " << start_value << " -> " << end_value << std::endl;
-    task4(start_value, end_value);
+    executeFunction(start_value, end_value, task4);
 
     return 0;
 }
