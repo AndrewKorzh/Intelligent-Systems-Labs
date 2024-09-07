@@ -69,7 +69,7 @@ std::deque<Chip> generateAllDominoChips()
     return chips;
 }
 
-bool checkLimitRools(const std::deque<Node> &nodes, int val)
+bool checkLimitRules(const std::deque<Node> &nodes, int val)
 {
     // Проверяем горизонтали
     for (int i = 0; i < 3; ++i)
@@ -109,7 +109,7 @@ bool checkLimitRools(const std::deque<Node> &nodes, int val)
     return true;
 }
 
-bool checkRools(const std::deque<Node> &nodes, int val)
+bool checkRules(const std::deque<Node> &nodes, int val)
 {
     // Проверяем горизонтали
     for (int i = 0; i < 3; ++i)
@@ -223,7 +223,7 @@ int main()
 
         if (index == 18)
         {
-            if (checkRools(nodes, 13))
+            if (checkRules(nodes, 13))
             {
                 std::cout << "Found!" << std::endl;
                 break;
@@ -242,7 +242,7 @@ int main()
         nodes[index].chip.down = nodes[index].q.front().down;
         nodes[index].chip.top = nodes[index].q.front().top;
         nodes[index].q.pop_front();
-        if (checkLimitRools(nodes, 13))
+        if (checkLimitRules(nodes, 13))
         {
             if (index < 17)
             {
@@ -292,7 +292,7 @@ int main()
 //             big_count += 1;
 //             std::cout << "Big check - " << big_count << std::endl;
 //             // big ckeck
-//             if (checkRools(nodes, 13))
+//             if (checkRules(nodes, 13))
 //             {
 //                 std::cout << "Found!" << std::endl;
 //                 break;
@@ -311,7 +311,7 @@ int main()
 //         nodes[index].chip.down = nodes[index].q.front().down;
 //         nodes[index].chip.top = nodes[index].q.front().top;
 //         nodes[index].q.pop_front();
-//         if (checkLimitRools(nodes, 13))
+//         if (checkLimitRules(nodes, 13))
 //         {
 //             if (index < 17)
 //             {
@@ -323,7 +323,7 @@ int main()
 //         }
 //     }
 
-//     // std::cout << checkLimitRools(nodes, 0);
+//     // std::cout << checkLimitRules(nodes, 0);
 
 //     return 0;
 // }
