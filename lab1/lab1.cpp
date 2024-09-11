@@ -305,7 +305,7 @@ void executeFunction(int start_value, int end_value, std::deque<int> (*function)
 int main()
 {
     int start_value = 1;
-    int end_value = 10001;
+    int end_value = 100001;
 
     std::cout << "\nTask 1: " << start_value << " -> " << end_value << std::endl;
     executeFunction(start_value, end_value, task1);
