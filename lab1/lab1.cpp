@@ -291,6 +291,43 @@ std::deque<int> task4(int start_value = 2, int end_value = 10000)
     return result;
 }
 
+std::unordered_set<int> expand_left_front(std::deque<Node> &nodes, std::unordered_set<int> &passed_values, int front_begin, int front_end)
+{
+    int count = 0;
+    for (int i = front_begin; i <= front_end; i++)
+    {
+        int val = nodes[i].value + 3;
+        if (passed_values.find(val) == passed_values.end())
+        {
+            nodes.emplace_back(val, i);
+            passed_values.insert(val);
+        }
+        val = nodes[i].value * 2;
+        if (passed_values.find(val) == passed_values.end())
+        {
+            nodes.emplace_back(val, i);
+            passed_values.insert(val);
+        }
+    }
+}
+std::deque<int> task4_remastered(int start_value = 2, int end_value = 10000)
+{
+    std::unordered_set<int> left_passed_values;
+    std::unordered_set<int> right_passed_values;
+
+    std::deque<Node> left_nodes;
+    std::deque<Node> right_nodes;
+
+    left_nodes.emplace_back(start_value, -1);
+    right_nodes.emplace_back(end_value, -1);
+
+    int left_front_begin = 1;
+    int left_front_end = 1;
+
+    int right_front_begin = 1;
+    int right_front_end = 1;
+}
+
 void executeFunction(int start_value, int end_value, std::deque<int> (*function)(int, int))
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -305,7 +342,7 @@ void executeFunction(int start_value, int end_value, std::deque<int> (*function)
 int main()
 {
     int start_value = 1;
-    int end_value = 100001;
+    int end_value = 10000001;
 
     std::cout << "\nTask 1: " << start_value << " -> " << end_value << std::endl;
     executeFunction(start_value, end_value, task1);
