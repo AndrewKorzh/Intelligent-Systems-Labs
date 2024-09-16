@@ -3,7 +3,7 @@
 #include <cmath>
 #include <deque>
 #include <cstdlib>
-#include <unistd.h>
+#include <windows.h>
 #include <list>
 
 size_t isPerfectSquare(size_t num)
@@ -67,15 +67,19 @@ void draw_sequence(const std::list<std::string> &seq, int sleep_time, bool er)
     for (std::string value : seq)
     {
         draw_field(value, er);
-        sleep(sleep_time);
+        Sleep(sleep_time);
     }
+}
+
+void find_seq()
+{
 }
 
 int main()
 {
-    // std::list<std::string> seq4 = {"123456789ABCDE0F", "123456789ABCDEF0", "123456789AB0DEFC"};
-    // draw_sequence(seq4, 1, true);
-
-    std::list<std::string> seq3 = {"123456780", "123456708", "123456078", "123056478", "123506478"};
-    draw_sequence(seq3, 1, true);
+    std::list<std::string> seq4 = {"123456789ABCDE0F", "123456789ABCDEF0", "123456789AB0DEFC"};
+    draw_sequence(seq4, 600, true);
 }
+
+// std::list<std::string> seq3 = {"123456780", "123456708", "123456078", "123056478", "123506478"};
+// draw_sequence(seq3, 1, true);
