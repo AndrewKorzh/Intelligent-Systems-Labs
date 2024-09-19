@@ -9,9 +9,10 @@
 #include <tuple>
 #include <stdlib.h>
 #include <vector>
+#include <queue>
+#include <unordered_set>
 
 int rand(void);
-
 struct Node
 {
     std::string condition;
@@ -20,6 +21,36 @@ struct Node
     int g;
 
     Node(std::string cond, int lp, int ei, int steps) : condition(cond), last_position(lp), empty_index(ei), g(steps) {}
+};
+
+int manhattan_distance4x4(const std::string &state)
+{
+    int grid_size = 4;
+    int distance = 0;
+
+    for (int i = 0; i < state.size(); ++i)
+    {
+        char tile = state[i];
+        if (tile != '0') // Пропускаем пустую плитку
+        {
+            int value = (tile <= '9') ? tile - '1' : tile - 'A' + 9; // Преобразование плитки в целое значение
+            int current_x = i % grid_size;
+            int current_y = i / grid_size;
+            int target_x = value % grid_size;
+            int target_y = value / grid_size;
+
+            distance += std::abs(current_x - target_x) + std::abs(current_y - target_y);
+        }
+    }
+    return distance;
+}
+
+struct Compare
+{
+    bool operator()(const Node &n1, const Node &n2)
+    {
+        return n1.g + manhattan_distance4x4(n1.condition) > n2.g + manhattan_distance4x4(n2.condition); // тут элемент с меньшим приоритетом будет наверху
+    }
 };
 
 size_t isPerfectSquare(size_t num)
@@ -103,34 +134,17 @@ std::string swap_positions(const std::string &s, int i1, int i2)
     return res;
 }
 
-std::deque<std::tuple<std::string, int, int>> next_steps(const Node &node, std::map<int, std::deque<int>> &moves)
+std::deque<Node> next_nodes(const Node &node, std::map<int, std::deque<int>> &moves)
 {
     // Condition, last position, empty index
-    std::deque<std::tuple<std::string, int, int>> ns;
+    std::deque<Node> nodes;
     for (int i = 0; i < moves[node.empty_index].size(); ++i)
     {
         if (moves[node.empty_index][i] != node.last_position)
         {
-            ns.emplace_back(swap_positions(node.condition, moves[node.empty_index][i], node.empty_index), node.empty_index, moves[node.empty_index][i]);
+            nodes.emplace_back(swap_positions(node.condition, moves[node.empty_index][i], node.empty_index), node.empty_index, moves[node.empty_index][i], node.g + 1);
         }
     }
-    return ns;
-}
-
-std::deque<Node> random_node_seq(Node node, std::map<int, std::deque<int>> &moves, int length = 10)
-{
-    std::deque<Node> nodes;
-    nodes.emplace_back(node);
-
-    int g_start = node.g;
-
-    for (int i = 1; i < length; ++i)
-    {
-        auto next_steps_deque = next_steps(nodes.back(), moves);
-        auto next_random_node = next_steps_deque[rand() % next_steps_deque.size()];
-        nodes.emplace_back(std::get<0>(next_random_node), std::get<1>(next_random_node), std::get<2>(next_random_node), g_start + i);
-    }
-
     return nodes;
 }
 
@@ -173,27 +187,6 @@ bool isSolvable4x4(const std::string &puzzle)
 
     return false;
 }
-int manhattan_distance4x4(const std::string &state)
-{
-    int grid_size = 4;
-    int distance = 0;
-
-    for (int i = 0; i < state.size(); ++i)
-    {
-        char tile = state[i];
-        if (tile != '0') // Пропускаем пустую плитку
-        {
-            int value = (tile <= '9') ? tile - '1' : tile - 'A' + 9; // Преобразование плитки в целое значение
-            int current_x = i % grid_size;
-            int current_y = i / grid_size;
-            int target_x = value % grid_size;
-            int target_y = value / grid_size;
-
-            distance += std::abs(current_x - target_x) + std::abs(current_y - target_y);
-        }
-    }
-    return distance;
-}
 
 Node create_start_node(std::string c)
 {
@@ -201,10 +194,49 @@ Node create_start_node(std::string c)
     return n;
 }
 
-std::deque<Node> solve_game_A_star()
+std::deque<std::string> solve_game_A_star(Node start_node, std::map<int, std::deque<int>> &moves)
 {
-    std::deque<Node> result;
-    // code //
+    std::string start_condition = start_node.condition;
+    std::string target_condition = "123456789ABCDEF0";
+    std::map<std::string, std::string> parent_map;
+
+    std::deque<std::string> result;
+
+    std::unordered_set<std::string> passed_values;
+    std::priority_queue<Node, std::vector<Node>, Compare> pq;
+    pq.push(start_node);
+
+    while (true)
+    {
+        Node node = pq.top();
+        pq.pop();
+        passed_values.insert(node.condition);
+        if (node.condition != target_condition)
+        {
+            auto nv = next_nodes(node, moves);
+            for (const auto &n : nv)
+            {
+                if (passed_values.find(n.condition) == passed_values.end())
+                {
+                    parent_map[n.condition] = node.condition;
+                    pq.push(n);
+                }
+            }
+        }
+        else
+        {
+            std::cout << "Solved" << std::endl;
+            auto current_condition = node.condition;
+            while (current_condition != start_condition)
+            {
+                result.push_front(current_condition);
+                current_condition = parent_map[current_condition];
+            }
+            std::cout << result.size() << std::endl;
+            break;
+        }
+    }
+
     return result;
 }
 
@@ -230,7 +262,31 @@ int main()
 
     // auto condition = "5134207896ACDEBF";
     // auto condition = "0FEDCBA987654321";
-    auto condition = "123456789ABCDEF0";
+    // auto condition = "123456789ABCDE0F";
+    // auto condition = "123456789ABCDEF0";
+
+    std::map<int, std::string> conditions{
+        {-2, "123456789AFB0EDC"},
+        {-1, "F2345678A0BE91CD"},
+        {0, "123456789ABCDEF0"},
+        {5, "1234067859ACDEBF"},
+        {8, "5134207896ACDEBF"},
+        {10, "16245A3709C8DEBF"},
+        {13, "1723068459ACDEBF"},
+        {19, "12345678A0BE9FCD"},
+        {27, "51247308A6BE9FCD"},
+        {33, "F2345678A0BE91DC"},
+        {35, "75123804A6BE9FCD"},
+        {45, "75AB2C416D389F0E"},
+        {48, "04582E1DF79BCA36"},
+        {52, "FE169B4C0A73D852"},
+        {55, "D79F2E8A45106C3B"},
+        {58, "DBE87A2C91F65034"},
+        {61, "BAC0F478E19623D5"},
+
+    };
+
+    auto condition = conditions[5];
 
     auto node = create_start_node(condition);
 
@@ -238,13 +294,54 @@ int main()
 
     if (isSolvable4x4(node.condition))
     {
+
         std::cout << "Can Solve" << std::endl;
+        auto res = solve_game_A_star(node, moves);
+        Sleep(2000);
+        for (int i = 0; i < res.size(); ++i)
+        {
+            draw_field(res[i], true);
+            Sleep(300);
+        }
     }
     else
     {
         std::cout << "Cant Solve" << std::endl;
     }
 }
+
+///////////////////        not used    ///////////////////////
+// std::deque<Node> random_node_seq(Node node, std::map<int, std::deque<int>> &moves, int length = 10)
+// {
+//     std::deque<Node> nodes;
+//     nodes.emplace_back(node);
+
+//     int g_start = node.g;
+
+//     for (int i = 1; i < length; ++i)
+//     {
+//         auto next_steps_deque = next_steps(nodes.back(), moves);
+//         auto next_random_node = next_steps_deque[rand() % next_steps_deque.size()];
+//         nodes.emplace_back(std::get<0>(next_random_node), std::get<1>(next_random_node), std::get<2>(next_random_node), g_start + i);
+//     }
+
+//     return nodes;
+// }
+
+// std::deque<std::tuple<std::string, int, int>> next_steps(const Node &node, std::map<int, std::deque<int>> &moves)
+// {
+//     // Condition, last position, empty index
+//     std::deque<std::tuple<std::string, int, int>> ns;
+//     for (int i = 0; i < moves[node.empty_index].size(); ++i)
+//     {
+//         if (moves[node.empty_index][i] != node.last_position)
+//         {
+//             ns.emplace_back(swap_positions(node.condition, moves[node.empty_index][i], node.empty_index), node.empty_index, moves[node.empty_index][i]);
+//         }
+//     }
+//     return ns;
+// }
+///////////////////////////////////////////////////////////////////////
 
 // draw_nodes_sequence(random_node_seq(node, moves, 20), 500, true);
 //  std::deque<Node> nodes;
