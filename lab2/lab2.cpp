@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <vector>
 #include <queue>
+#include <chrono>
 #include <unordered_set>
+#include <sstream>
 
 int rand(void);
 struct Node
@@ -72,13 +74,14 @@ size_t isPerfectSquare(size_t num)
     }
 }
 
-void draw_field(const std::string &str, bool er = false)
+void draw_field(const std::string &str, bool er = false, std::string info = "")
 {
+
     if (er)
     {
         system("cls");
     }
-
+    std::cout << info;
     size_t len = str.length();
     size_t root = isPerfectSquare(len);
     std::string layer = std::string(root * 3, '-');
@@ -225,7 +228,6 @@ std::deque<std::string> solve_game_A_star(Node start_node, std::map<int, std::de
         }
         else
         {
-            std::cout << "Solved" << std::endl;
             auto current_condition = node.condition;
             while (current_condition != start_condition)
             {
@@ -286,22 +288,30 @@ int main()
 
     };
 
-    auto condition = conditions[5];
-
+    auto condition = conditions[35];
     auto node = create_start_node(condition);
-
-    std::cout << manhattan_distance4x4(condition) << std::endl;
+    int draw_time_sleep = 300;
+    bool erace = true;
 
     if (isSolvable4x4(node.condition))
     {
 
         std::cout << "Can Solve" << std::endl;
+        auto start = std::chrono::high_resolution_clock::now();
         auto res = solve_game_A_star(node, moves);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "Executed time: " << duration.count() << " milliseconds" << std::endl;
+
+        std::stringstream ss;
+        ss << "Length: " << res.size() << " Time: " << duration.count() << " milliseconds" << "\n";
+
+        std::string info = ss.str();
         Sleep(2000);
         for (int i = 0; i < res.size(); ++i)
         {
-            draw_field(res[i], true);
-            Sleep(300);
+            draw_field(res[i], erace, info);
+            Sleep(draw_time_sleep);
         }
     }
     else
@@ -309,7 +319,13 @@ int main()
         std::cout << "Cant Solve" << std::endl;
     }
 }
-
+//
+//
+//
+//
+//
+//
+//
 ///////////////////        not used    ///////////////////////
 // std::deque<Node> random_node_seq(Node node, std::map<int, std::deque<int>> &moves, int length = 10)
 // {
