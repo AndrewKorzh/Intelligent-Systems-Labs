@@ -15,16 +15,6 @@
 #include <sstream>
 #include <unordered_map>
 
-struct Node
-{
-    std::string condition;
-    int last_position;
-    int empty_index;
-    int g;
-
-    Node(std::string cond, int lp, int ei, int steps) : condition(cond), last_position(lp), empty_index(ei), g(steps) {}
-};
-
 int manhattan_distance4x4(const std::string &state)
 {
     int grid_size = 4;
@@ -46,12 +36,22 @@ int manhattan_distance4x4(const std::string &state)
     }
     return distance;
 }
+struct Node
+{
+    std::string condition;
+    int last_position;
+    int empty_index;
+    int g;
+    int f;
+
+    Node(std::string cond, int lp, int ei, int steps) : condition(cond), last_position(lp), empty_index(ei), g(steps), f(steps + manhattan_distance4x4(cond)) {}
+};
 
 struct Compare
 {
     bool operator()(const Node &n1, const Node &n2)
     {
-        return n1.g + manhattan_distance4x4(n1.condition) > n2.g + manhattan_distance4x4(n2.condition);
+        return n1.f > n2.f;
     }
 };
 
