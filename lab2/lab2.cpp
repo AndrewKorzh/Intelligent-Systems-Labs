@@ -265,11 +265,7 @@ int main()
 
     };
 
-    // Странно - 48 считает за сек, а 45 - за 30
-
-    auto condition = conditions[58];
-
-    condition = "1234ABC567890DFE";
+    auto condition = conditions[48];
 
     auto node = create_start_node(condition);
     int draw_time_sleep = 300;
