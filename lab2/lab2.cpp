@@ -14,6 +14,154 @@
 #include <unordered_set>
 #include <sstream>
 #include <unordered_map>
+#include <functional>
+#include <climits>
+#include <algorithm>
+#include <random>
+#include <string>
+#include <ctime>
+
+int manhattan_distance_with_linear_conflict_and_corner(const std::string &state)
+{
+    int grid_size = 4;
+    int distance = 0;
+    int linear_conflict = 0;
+    int corner_trap_penalty = 0;
+
+    // Манхэттенское расстояние с линейными конфликтами
+    for (int i = 0; i < state.size(); ++i)
+    {
+        char tile = state[i];
+        if (tile != '0')
+        {
+            int value = (tile <= '9') ? tile - '1' : tile - 'A' + 9;
+            int current_x = i % grid_size;
+            int current_y = i / grid_size;
+            int target_x = value % grid_size;
+            int target_y = value / grid_size;
+
+            // Манхэттенское расстояние
+            distance += std::abs(current_x - target_x) + std::abs(current_y - target_y);
+
+            // Линейный конфликт по строкам
+            if (current_y == target_y)
+            {
+                for (int k = current_x + 1; k < grid_size; ++k)
+                {
+                    char other_tile = state[current_y * grid_size + k];
+                    if (other_tile != '0')
+                    {
+                        int other_value = (other_tile <= '9') ? other_tile - '1' : other_tile - 'A' + 9;
+                        int other_target_x = other_value % grid_size;
+                        if (other_target_x < target_x) // Линейный конфликт
+                        {
+                            linear_conflict += 2;
+                        }
+                    }
+                }
+            }
+
+            // Линейный конфликт по столбцам
+            if (current_x == target_x)
+            {
+                for (int k = current_y + 1; k < grid_size; ++k)
+                {
+                    char other_tile = state[k * grid_size + current_x];
+                    if (other_tile != '0')
+                    {
+                        int other_value = (other_tile <= '9') ? other_tile - '1' : other_tile - 'A' + 9;
+                        int other_target_y = other_value / grid_size;
+                        if (other_target_y < target_y) // Линейный конфликт
+                        {
+                            linear_conflict += 2;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // "Пробки углов" (corner trapping)
+    if (state[0] != '1' && (state[1] == '2' || state[4] == '5'))
+    {
+        corner_trap_penalty += 2; // Пробка в левом верхнем углу
+    }
+    if (state[3] != '4' && (state[2] == '3' || state[7] == '8'))
+    {
+        corner_trap_penalty += 2; // Пробка в правом верхнем углу
+    }
+    if (state[12] != 'D' && (state[8] == '9' || state[13] == 'E'))
+    {
+        corner_trap_penalty += 2; // Пробка в левом нижнем углу
+    }
+    if (state[15] != 'F' && (state[11] == 'B' || state[14] == 'E'))
+    {
+        corner_trap_penalty += 2; // Пробка в правом нижнем углу
+    }
+
+    return distance + linear_conflict + corner_trap_penalty;
+}
+
+int manhattan_distance_with_linear_conflict(const std::string &state)
+{
+    int grid_size = 4;
+    int distance = 0;
+    int linear_conflict = 0;
+
+    for (int i = 0; i < state.size(); ++i)
+    {
+        char tile = state[i];
+        if (tile != '0')
+        {
+            int value = (tile <= '9') ? tile - '1' : tile - 'A' + 9;
+            int current_x = i % grid_size;
+            int current_y = i / grid_size;
+            int target_x = value % grid_size;
+            int target_y = value / grid_size;
+
+            // Манхэттенское расстояние
+            distance += std::abs(current_x - target_x) + std::abs(current_y - target_y);
+
+            // Проверка на линейный конфликт в строке
+            if (current_y == target_y)
+            {
+                for (int k = current_x + 1; k < grid_size; ++k)
+                {
+                    char other_tile = state[current_y * grid_size + k];
+                    if (other_tile != '0')
+                    {
+                        int other_value = (other_tile <= '9') ? other_tile - '1' : other_tile - 'A' + 9;
+                        int other_target_x = other_value % grid_size;
+                        if (other_target_x < target_x) // Линейный конфликт: плитка мешает
+                        {
+                            linear_conflict += 2;
+                        }
+                    }
+                }
+            }
+
+            // Проверка на линейный конфликт в столбце
+            if (current_x == target_x)
+            {
+                for (int k = current_y + 1; k < grid_size; ++k)
+                {
+                    char other_tile = state[k * grid_size + current_x];
+                    if (other_tile != '0')
+                    {
+                        int other_value = (other_tile <= '9') ? other_tile - '1' : other_tile - 'A' + 9;
+                        int other_target_y = other_value / grid_size;
+                        if (other_target_y < target_y) // Линейный конфликт: плитка мешает
+                        {
+                            linear_conflict += 2;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return distance + linear_conflict;
+}
 
 int manhattan_distance4x4(const std::string &state)
 {
@@ -173,6 +321,15 @@ bool isSolvable4x4(const std::string &puzzle)
     return false;
 }
 
+std::string generate_random_puzzle()
+{
+    std::string puzzle = "ABCDEF0";
+    std::mt19937 g(static_cast<unsigned int>(std::time(nullptr)));
+    std::shuffle(puzzle.begin(), puzzle.end(), g);
+
+    return "213456789" + puzzle;
+}
+
 Node create_start_node(std::string c)
 {
     Node n(c, -1, c.find('0'), 0);
@@ -224,6 +381,75 @@ std::deque<std::string> solve_game_A_star(Node start_node, std::map<int, std::de
     return result;
 }
 
+std::deque<std::string> solve_game_IDA_star(Node start_node, std::map<int, std::deque<int>> &moves)
+{
+    std::string start_condition = start_node.condition;
+    std::string target_condition = "123456789ABCDEF0";
+    std::unordered_map<std::string, std::string> parent_map;
+    std::deque<std::string> result;
+
+    std::unordered_set<std::string> passed_values;
+
+    std::function<int(const Node &, int)> search = [&](const Node &node, int bound)
+    {
+        int f = node.g + manhattan_distance4x4(node.condition);
+        if (f > bound)
+        {
+            return f;
+        }
+        if (node.condition == target_condition)
+        {
+            return -1; // Решение найдено
+        }
+
+        int min_threshold = INT_MAX;
+
+        auto next_nodes_list = next_nodes(node, moves);
+        for (const auto &next_node : next_nodes_list)
+        {
+            if (passed_values.find(next_node.condition) == passed_values.end())
+            {
+                passed_values.insert(next_node.condition);
+                parent_map[next_node.condition] = node.condition;
+                int t = search(next_node, bound);
+                if (t == -1)
+                {
+                    return -1;
+                }
+                if (t < min_threshold)
+                {
+                    min_threshold = t;
+                }
+                passed_values.erase(next_node.condition);
+            }
+        }
+        return min_threshold;
+    };
+
+    int bound = manhattan_distance4x4(start_node.condition);
+    while (true)
+    {
+        int t = search(start_node, bound);
+        if (t == -1)
+        {
+            std::string current_condition = target_condition;
+            while (current_condition != start_condition)
+            {
+                result.push_front(current_condition);
+                current_condition = parent_map[current_condition];
+            }
+            std::cout << result.size() << std::endl;
+            return result;
+        }
+        if (t == INT_MAX)
+        {
+            break; // Решение не найдено
+        }
+        bound = t;
+    }
+    return result;
+}
+
 int main()
 {
     std::map<int, std::deque<int>> moves{
@@ -256,29 +482,33 @@ int main()
         {27, "51247308A6BE9FCD"},
         {33, "F2345678A0BE91DC"},
         {35, "75123804A6BE9FCD"},
-        {45, "75AB2C416D389F0E"},
+        {40, "12A34BC57689DEF0"},
+        {42, "A10598B2764C3DEF"},
         {48, "04582E1DF79BCA36"},
-        {52, "FE169B4C0A73D852"},
-        {55, "D79F2E8A45106C3B"},
-        {58, "DBE87A2C91F65034"},
-        {61, "BAC0F478E19623D5"},
-
     };
 
-    auto condition = conditions[48];
+    auto condition = conditions[40]; // generate_random_puzzle(); //"1A095B82F64C3DE7"; //
 
     auto node = create_start_node(condition);
-    int draw_time_sleep = 300;
+    int draw_time_sleep = 100;
     bool erace = true;
 
     if (isSolvable4x4(node.condition))
     {
 
         std::cout << "Possible to Solve\n"
-                  << "manhattan_distance: " << manhattan_distance4x4(node.condition) << std::endl;
+                  << "manhattan_distance4x4: " << manhattan_distance4x4(node.condition) << std::endl;
 
         auto start = std::chrono::high_resolution_clock::now();
+        /////////////////////
+
+        // std::cout << "IDA*" << std::endl;
+        // auto res = solve_game_IDA_star(node, moves);
+
+        std::cout << "A*" << std::endl;
         auto res = solve_game_A_star(node, moves);
+
+        /////////////////
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "Executed time: " << duration.count() << " milliseconds" << std::endl;
@@ -298,4 +528,5 @@ int main()
     {
         std::cout << "Impossible to Solve" << std::endl;
     }
+    std::cout << condition << std::endl;
 }
