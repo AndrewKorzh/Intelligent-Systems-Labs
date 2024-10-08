@@ -203,63 +203,6 @@ struct Compare
     }
 };
 
-size_t isPerfectSquare(size_t num)
-{
-    if (num == 0)
-        return 0;
-
-    double root = std::sqrt(static_cast<double>(num));
-
-    size_t intRoot = static_cast<size_t>(std::round(root));
-
-    if (intRoot * intRoot == num)
-    {
-        return intRoot;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-void draw_field(const std::string &str, bool er = false, std::string info = "")
-{
-
-    if (er)
-    {
-        system("cls");
-    }
-    std::cout << info;
-    size_t len = str.length();
-    size_t root = isPerfectSquare(len);
-    std::string layer = std::string(root * 3, '-');
-
-    if (root == 0)
-    {
-        return;
-    }
-
-    std::cout << std::endl;
-    for (size_t i = 0; i < root; ++i)
-    {
-        std::cout << layer << std::endl;
-        for (size_t j = 0; j < root; ++j)
-        {
-            if (str[i * root + j] != '0')
-            {
-                std::cout << "|" << str[i * root + j] << "|";
-            }
-            else
-            {
-                std::cout << "   ";
-            }
-        }
-        std::cout << std::endl;
-        std::cout << layer << std::endl;
-    }
-    std::cout << std::endl;
-}
-
 std::string swap_positions(const std::string &s, int i1, int i2)
 {
     std::string res = s;
@@ -319,6 +262,62 @@ bool isSolvable4x4(const std::string &puzzle)
     }
 
     return false;
+}
+
+size_t isPerfectSquare(size_t num)
+{
+    if (num == 0)
+        return 0;
+
+    double root = std::sqrt(static_cast<double>(num));
+
+    size_t intRoot = static_cast<size_t>(std::round(root));
+
+    if (intRoot * intRoot == num)
+    {
+        return intRoot;
+    }
+    else
+    {
+        return 0;
+    }
+}
+void draw_field(const std::string &str, bool er = false, std::string info = "")
+{
+
+    if (er)
+    {
+        system("cls");
+    }
+    std::cout << info;
+    size_t len = str.length();
+    size_t root = isPerfectSquare(len);
+    std::string layer = std::string(root * 3, '-');
+
+    if (root == 0)
+    {
+        return;
+    }
+
+    std::cout << std::endl;
+    for (size_t i = 0; i < root; ++i)
+    {
+        std::cout << layer << std::endl;
+        for (size_t j = 0; j < root; ++j)
+        {
+            if (str[i * root + j] != '0')
+            {
+                std::cout << "|" << str[i * root + j] << "|";
+            }
+            else
+            {
+                std::cout << "   ";
+            }
+        }
+        std::cout << std::endl;
+        std::cout << layer << std::endl;
+    }
+    std::cout << std::endl;
 }
 
 std::string generate_random_puzzle()
@@ -487,10 +486,10 @@ int main()
         {48, "04582E1DF79BCA36"},
     };
 
-    auto condition = conditions[40]; // generate_random_puzzle(); //"1A095B82F64C3DE7"; //
+    auto condition = conditions[42]; // generate_random_puzzle(); //"1A095B82F64C3DE7"; //
 
     auto node = create_start_node(condition);
-    int draw_time_sleep = 100;
+    int draw_time_sleep = 200;
     bool erace = true;
 
     if (isSolvable4x4(node.condition))
