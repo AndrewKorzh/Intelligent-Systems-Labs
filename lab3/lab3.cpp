@@ -9,6 +9,11 @@
 #include <utility>
 #include <memory>
 #include <unordered_set>
+
+#include <memory>
+#include <chrono>
+#include <sstream>
+#include <string>
 void draw(const std::array<std::uint8_t, 16> values);
 
 struct ArrayHash
@@ -268,8 +273,9 @@ void generateNodesAndInsert(
         }
     }
 }
-void printToRoot(const std::shared_ptr<Node> &node, int sleep_time)
+void printToRoot(const std::shared_ptr<Node> &node, int sleep_time, std::string time_info)
 {
+    system("cls");
     std::vector<std::shared_ptr<Node>> path;
     auto current = node;
     while (current != nullptr)
@@ -281,6 +287,7 @@ void printToRoot(const std::shared_ptr<Node> &node, int sleep_time)
     for (auto it = path.rbegin(); it != path.rend(); ++it)
     {
         // std::cout << "Top Node g: " << (*it)->g << ", h: " << (*it)->heuristic << std::endl;
+        std::cout << time_info << std::endl;
         draw((*it)->position);
         Sleep(sleep_time);
         if (std::next(it) != path.rend())
@@ -365,9 +372,14 @@ int main()
     auto node = std::make_shared<Node>(start_position, 0, LowerDist, UpperDist);
     pq.push(node);
 
+    auto start = std::chrono::high_resolution_clock::now();
     std::shared_ptr<Node> found = AStar(pq, LowerDist, UpperDist, combinations, true, target_position);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
 
-    printToRoot(found, 100);
+    std::string timeInfo = "time: " + std::to_string(duration.count()) + "s";
+
+    printToRoot(found, 100, timeInfo);
 
     return 0;
 }
