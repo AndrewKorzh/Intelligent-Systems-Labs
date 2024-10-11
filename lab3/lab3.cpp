@@ -7,9 +7,22 @@
 #include <queue>
 #include <cstring>
 #include <utility>
-
+#include <memory>
+#include <unordered_set>
 void draw(const std::array<std::uint8_t, 16> values);
 
+struct ArrayHash
+{
+    std::size_t operator()(const std::array<std::uint8_t, 16> &arr) const
+    {
+        std::size_t hash = 0;
+        for (auto byte : arr)
+        {
+            hash = hash * 31 + byte;
+        }
+        return hash;
+    }
+};
 std::array<uint8_t, 16> generateRandomArray()
 {
     std::array<uint8_t, 16> values;
@@ -133,87 +146,78 @@ struct Node
     std::array<std::uint8_t, 16> position;
     int g;
     int heuristic;
-    Node *parent;
+    std::shared_ptr<Node> parent;
 
-    Node(const std::array<std::uint8_t, 16> &pos, int g_value, const uint8_t (&LowerDist)[8][8], const uint8_t (&UpperDist)[8][8], Node *parent_node = nullptr)
-        : g(g_value), parent(parent_node), position(pos)
+    Node(const std::array<std::uint8_t, 16> &pos, int g_value, const uint8_t (&LowerDist)[8][8], const uint8_t (&UpperDist)[8][8], std::shared_ptr<Node> parent_node = nullptr)
+        : position(pos), g(g_value), parent(parent_node)
     {
         heuristic = manhattanDistance(position, LowerDist, UpperDist);
     }
 
-    Node swapBits(int index1, int bit1, int index2, int bit2, const uint8_t (&LowerDist)[8][8], const uint8_t (&UpperDist)[8][8]) const
+    std::shared_ptr<Node> swapBits(int index1, int bit1, int index2, int bit2, const uint8_t (&LowerDist)[8][8], const uint8_t (&UpperDist)[8][8]) const
     {
-        std::array<std::uint8_t, 16> new_position;
-        std::memcpy(new_position.data(), position.data(), 16 * sizeof(std::uint8_t));
+        std::array<std::uint8_t, 16> new_position = position;
 
-        // Обмен битами
         new_position[index1] ^= (1 << bit1);
         new_position[index2] ^= (1 << bit2);
 
-        return Node(new_position, g + 1, LowerDist, UpperDist, const_cast<Node *>(this));
+        return std::make_shared<Node>(new_position, g + 1, LowerDist, UpperDist, std::make_shared<Node>(*this));
     }
 };
 
-bool areEqual(const std::uint8_t a[16], const std::uint8_t b[16])
+bool areEqual(const std::array<std::uint8_t, 16> &a, const std::array<std::uint8_t, 16> &b)
 {
-    return std::memcmp(a, b, 16) == 0;
+    return std::memcmp(a.data(), b.data(), 16) == 0;
 }
 struct Compare
 {
-    bool operator()(const Node &n1, const Node &n2)
+    bool operator()(const std::shared_ptr<Node> &n1, const std::shared_ptr<Node> &n2) const
     {
-        return (n1.heuristic + n1.g) > (n2.heuristic + n2.g);
+        return (n1->heuristic + n1->g) > (n2->heuristic + n2->g);
     }
 };
 
-// надо разделять ход
 void generateNodesAndInsert(
-    std::priority_queue<Node, std::vector<Node>, Compare> &pq,
+    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, Compare> &pq,
     const uint8_t (&LowerDist)[8][8],
     const uint8_t (&UpperDist)[8][8],
     const std::vector<std::pair<int, int>> &combinations,
-    bool turn)
+    bool turn,
+    const std::shared_ptr<Node> &current)
 {
-    Node node = pq.top();
-
-    for (int i = 0; i < 8; ++i)
+    // Ход верхних
+    if (turn)
     {
-        for (int bit_pos = 0; bit_pos <= 7; ++bit_pos)
+        for (int i = 0; i < 8; ++i)
         {
-
-            // Типа если 1
-            if (isBitSet(node.position[i], bit_pos))
+            for (int bit_pos = 0; bit_pos <= 7; ++bit_pos)
             {
-                for (const auto &combination : combinations)
+                if (isBitSet(current->position[i], bit_pos))
                 {
-                    int jump_i_1 = i + combination.first;
-                    int jump_bit_pos_1 = bit_pos + combination.second;
-
-                    // На айпаде схема полная
-                    // Прыжок 1 на доске? Да:
-                    if (0 <= jump_i_1 && jump_i_1 < 8 && 0 <= jump_bit_pos_1 && jump_bit_pos_1 < 8)
+                    for (const auto &combination : combinations)
                     {
-                        // Свободен прыжок 1? Да:
-                        if (isBitNotSet(node.position[jump_i_1], jump_bit_pos_1))
+                        int jump_i_1 = i + combination.first;
+                        int jump_bit_pos_1 = bit_pos + combination.second;
+
+                        if (0 <= jump_i_1 && jump_i_1 < 8 && 0 <= jump_bit_pos_1 && jump_bit_pos_1 < 8)
                         {
-                            // Были? Нет:
-                            pq.push(node.swapBits(i, bit_pos, jump_i_1, jump_bit_pos_1, LowerDist, UpperDist));
-                            // Были? Да - сделать:
-                        }
-                        // Свободен прыжок 2? Нет:
-                        else
-                        {
-                            int jump_i_2 = i + combination.first * 2;
-                            int jump_bit_pos_2 = bit_pos + combination.second * 2;
-                            // Прыжок 2 на доске? Да:
-                            if (0 <= jump_i_2 && i + jump_i_2 < 8 && 0 <= jump_bit_pos_2 && jump_bit_pos_2 < 8)
+                            if (isBitNotSet(current->position[jump_i_1], jump_bit_pos_1) && isBitNotSet(current->position[jump_i_1 + 8], jump_bit_pos_1))
                             {
-                                // Прыжок 2 свободен? Да:
-                                if (isBitNotSet(node.position[jump_i_2], jump_bit_pos_2))
+                                auto newNode = current->swapBits(i, bit_pos, jump_i_1, jump_bit_pos_1, LowerDist, UpperDist);
+                                pq.push(newNode);
+                            }
+                            else
+                            {
+                                int jump_i_2 = jump_i_1 + combination.first;
+                                int jump_bit_pos_2 = jump_bit_pos_1 + combination.second;
+
+                                if (0 <= jump_i_2 && jump_i_2 < 8 && 0 <= jump_bit_pos_2 && jump_bit_pos_2 < 8)
                                 {
-                                    // Были? Нет:
-                                    pq.push(node.swapBits(i, bit_pos, jump_i_2, jump_bit_pos_2, LowerDist, UpperDist));
-                                    // Были? Да - сделать:
+                                    if (isBitNotSet(current->position[jump_i_2], jump_bit_pos_2) && isBitNotSet(current->position[jump_i_2 + 8], jump_bit_pos_2))
+                                    {
+                                        auto newNode = current->swapBits(i, bit_pos, jump_i_2, jump_bit_pos_2, LowerDist, UpperDist);
+                                        pq.push(newNode);
+                                    }
                                 }
                             }
                         }
@@ -222,9 +226,102 @@ void generateNodesAndInsert(
             }
         }
     }
-    if (turn)
+    // Ход нижних
+    else
     {
+        for (int i = 8; i < 16; ++i)
+        {
+            for (int bit_pos = 0; bit_pos <= 7; ++bit_pos)
+            {
+                if (isBitSet(current->position[i], bit_pos))
+                {
+                    for (const auto &combination : combinations)
+                    {
+                        int jump_i_1 = i + combination.first;
+                        int jump_bit_pos_1 = bit_pos + combination.second;
+
+                        if (8 <= jump_i_1 && jump_i_1 < 16 && 0 <= jump_bit_pos_1 && jump_bit_pos_1 < 8)
+                        {
+                            if (isBitNotSet(current->position[jump_i_1], jump_bit_pos_1) && isBitNotSet(current->position[jump_i_1 - 8], jump_bit_pos_1))
+                            {
+                                auto newNode = current->swapBits(i, bit_pos, jump_i_1, jump_bit_pos_1, LowerDist, UpperDist);
+                                pq.push(newNode);
+                            }
+                            else
+                            {
+                                int jump_i_2 = jump_i_1 + combination.first;
+                                int jump_bit_pos_2 = jump_bit_pos_1 + combination.second;
+
+                                if (8 <= jump_i_2 && jump_i_2 < 16 && 0 <= jump_bit_pos_2 && jump_bit_pos_2 < 8)
+                                {
+                                    if (isBitNotSet(current->position[jump_i_2], jump_bit_pos_2) && isBitNotSet(current->position[jump_i_2 - 8], jump_bit_pos_2))
+                                    {
+                                        auto newNode = current->swapBits(i, bit_pos, jump_i_2, jump_bit_pos_2, LowerDist, UpperDist);
+                                        pq.push(newNode);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+void printToRoot(const std::shared_ptr<Node> &node)
+{
+    std::vector<std::shared_ptr<Node>> path;
+    auto current = node;
+    while (current != nullptr)
+    {
+        path.push_back(current);
+        current = current->parent;
+    }
+
+    for (auto it = path.rbegin(); it != path.rend(); ++it)
+    {
+        // std::cout << "Top Node g: " << (*it)->g << ", h: " << (*it)->heuristic << std::endl;
+        draw((*it)->position);
+        Sleep(300);
+        system("cls");
+    }
+}
+
+// Начальный узел уже внутри
+std::shared_ptr<Node> AStar(
+    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, Compare> &pq,
+    const uint8_t (&LowerDist)[8][8],
+    const uint8_t (&UpperDist)[8][8],
+    const std::vector<std::pair<int, int>> &combinations,
+    bool turn,
+    const std::array<std::uint8_t, 16> &target_position)
+{
+    std::unordered_set<std::array<std::uint8_t, 16>, ArrayHash> closedSet;
+
+    while (!pq.empty())
+    {
+        std::shared_ptr<Node> current = pq.top();
+        pq.pop();
+
+        if (areEqual(current->position, target_position))
+        {
+
+            return current;
+        }
+
+        if (closedSet.find(current->position) != closedSet.end())
+        {
+            continue;
+        }
+
+        closedSet.insert(current->position);
+
+        generateNodesAndInsert(pq, LowerDist, UpperDist, combinations, turn, current);
+
+        turn = !turn;
+    }
+
+    return nullptr;
 }
 
 int main()
@@ -262,30 +359,45 @@ int main()
                                                     0b00000111, 0b00000111, 0b00000111, 0b00000000,
                                                     0b00000000, 0b00000000, 0b00000000, 0b00000000};
 
-    std::priority_queue<Node, std::vector<Node>, Compare> pq;
+    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, Compare> pq;
 
-    Node node(start_position, 5, LowerDist, UpperDist);
+    auto node = std::make_shared<Node>(start_position, 0, LowerDist, UpperDist);
     pq.push(node);
 
-    Node topNode = pq.top();
-    std::cout << "Top Node g: " << topNode.g << ", h: " << topNode.heuristic << std::endl;
+    std::shared_ptr<Node> found = AStar(pq, LowerDist, UpperDist, combinations, true, target_position);
 
-    generateNodesAndInsert(pq, LowerDist, UpperDist, combinations, true);
+    printToRoot(found);
 
-    // std::cout << pq.size() << std::endl;
-
-    while (pq.size() > 0)
+    if (found)
     {
-        auto n = pq.top();
-        pq.pop();
-        draw(n.position);
-        std::cout << n.heuristic << std::endl;
-        Sleep(1000);
-        system("cls");
+        std::cout << "Found\n";
+    }
+    else
+    {
+        std::cout << "Not found.\n";
     }
 
     return 0;
 }
+
+// std::cout << "Top Node g: " << topNode.g << ", h: " << topNode.heuristic << std::endl;
+
+// draw(topNode.position);
+
+// while (pq.size() > 0)
+// {
+//     auto n = pq.top();
+//     pq.pop();
+//     draw(n.position);
+//     std::cout << n.heuristic << std::endl;
+//     Sleep(1000);
+//     system("cls");
+// }
+
+// Node topNode = pq.top();
+// std::cout << "Top Node g: " << topNode.g << ", h: " << topNode.heuristic << std::endl;
+
+// generateNodesAndInsert(pq, LowerDist, UpperDist, combinations, true);
 // auto md_s = manhattanDistance(start_position, LowerDist, UpperDist);
 // // std::cout << md_s << std::endl;
 
