@@ -28,27 +28,6 @@ struct ArrayHash
         return hash;
     }
 };
-std::array<uint8_t, 16> generateRandomArray()
-{
-    std::array<uint8_t, 16> values;
-    for (size_t i = 0; i < values.size(); ++i)
-    {
-        values[i] = rand() % 256; // Генерируем случайное значение от 0 до 255
-    }
-    return values;
-}
-
-void randomDraw(int n, int time)
-{
-    for (int i = 0; i <= n; ++i)
-    {
-
-        draw(generateRandomArray());
-        Sleep(time);
-
-        system("cls");
-    }
-}
 
 bool isBitSet(int element, int bit_index)
 {
@@ -379,7 +358,7 @@ int main()
 
     std::string timeInfo = "time: " + std::to_string(duration.count()) + "s";
 
-    printToRoot(found, 100, timeInfo);
+    printToRoot(found, 200, timeInfo);
 
     return 0;
 }

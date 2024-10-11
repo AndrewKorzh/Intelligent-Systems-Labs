@@ -13,7 +13,7 @@
 
 ![Лабораторная 1]( docs/img/lab1.jpg)
 
-`g++ -o lab1 lab1.cpp`, `./lab1 `
+`g++ -o lab1 lab1.cpp`, `./lab1 `, `g++ -o lab3_3x3 lab3_3x3.cpp -O2 -std=c++11` - пример с оптимизацией и без проверок
 
 # Лабораторная 2
 
