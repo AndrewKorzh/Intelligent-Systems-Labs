@@ -1,11 +1,11 @@
 #include <iostream>
-#include <string>
 #include <vector>
 #include <cstdint>
-#include <cstdlib>
-#include <ctime>
 #include <array>
+#include <cstdlib>
 #include <windows.h>
+
+void draw(const std::uint8_t values[]);
 
 std::array<uint8_t, 16> generateRandomArray()
 {
@@ -91,12 +91,56 @@ void draw(const std::uint8_t values[])
     std::cout << "\n\n\n";
 }
 
+struct Node
+{
+    std::uint8_t position[16];
+    int cost;
+    int heuristic;
+    Node *parent;
+
+    // (f-cost = g-cost + h-cost)
+    int totalCost() const
+    {
+        return cost + heuristic;
+    }
+
+    bool operator>(const Node &other) const
+    {
+        return totalCost() > other.totalCost();
+    }
+};
+
+// Очень плохая формула - к тому же неправильная - у одинаковых состояний показывает 15
+int manhattanDistance(const std::uint8_t (&current)[16], const std::uint8_t (&target)[16])
+{
+    int distance = 0;
+    ////////////////
+    return distance;
+}
+
 int main()
 {
-    std::uint8_t values[16] = {0b00000111, 0b00000111, 0b00000111, 0b00000000,
-                               0b00000000, 0b00000000, 0b00000000, 0b00000000,
-                               0b00000000, 0b00000000, 0b00000000, 0b00000000,
-                               0b00000000, 0b11100000, 0b11100000, 0b11100000};
+    std::uint8_t start_position[16] = {0b00000111, 0b00000111, 0b00000111, 0b00000000,
+                                       0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                                       0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                                       0b00000000, 0b11100000, 0b11100000, 0b11100000};
 
+    std::uint8_t target_position[16] = {0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                                        0b00000000, 0b11100000, 0b11100000, 0b11100000,
+                                        0b00000111, 0b00000111, 0b00000111, 0b00000000,
+                                        0b00000000, 0b00000000, 0b00000000, 0b00000000};
+
+    // std::uint8_t start_position[16] = {0b00000001, 0b00000000, 0b00000000, 0b00000000,
+    //                                    0b00000000, 0b00000000, 0b00000000, 0b00000000,
+    //                                    0b00000000, 0b00000000, 0b00000000, 0b00000000,
+    //                                    0b00000000, 0b00000000, 0b00000000, 0b00000001};
+
+    // std::uint8_t target_position[16] = {0b00000000, 0b00000000, 0b00000000, 0b00000000,
+    //                                     0b00000000, 0b00000000, 0b00000000, 0b10000000,
+    //                                     0b00000000, 0b00000000, 0b10000000, 0b00000000,
+    //                                     0b00000000, 0b00000000, 0b00000000, 0b00000000};
+
+    draw(start_position);
+    draw(target_position);
     return 0;
 }
