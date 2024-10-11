@@ -268,7 +268,7 @@ void generateNodesAndInsert(
         }
     }
 }
-void printToRoot(const std::shared_ptr<Node> &node)
+void printToRoot(const std::shared_ptr<Node> &node, int sleep_time)
 {
     std::vector<std::shared_ptr<Node>> path;
     auto current = node;
@@ -282,8 +282,11 @@ void printToRoot(const std::shared_ptr<Node> &node)
     {
         // std::cout << "Top Node g: " << (*it)->g << ", h: " << (*it)->heuristic << std::endl;
         draw((*it)->position);
-        Sleep(300);
-        system("cls");
+        Sleep(sleep_time);
+        if (std::next(it) != path.rend())
+        {
+            system("cls");
+        }
     }
 }
 
@@ -305,10 +308,8 @@ std::shared_ptr<Node> AStar(
 
         if (areEqual(current->position, target_position))
         {
-
             return current;
         }
-
         if (closedSet.find(current->position) != closedSet.end())
         {
             continue;
@@ -366,66 +367,7 @@ int main()
 
     std::shared_ptr<Node> found = AStar(pq, LowerDist, UpperDist, combinations, true, target_position);
 
-    printToRoot(found);
-
-    if (found)
-    {
-        std::cout << "Found\n";
-    }
-    else
-    {
-        std::cout << "Not found.\n";
-    }
+    printToRoot(found, 100);
 
     return 0;
 }
-
-// std::cout << "Top Node g: " << topNode.g << ", h: " << topNode.heuristic << std::endl;
-
-// draw(topNode.position);
-
-// while (pq.size() > 0)
-// {
-//     auto n = pq.top();
-//     pq.pop();
-//     draw(n.position);
-//     std::cout << n.heuristic << std::endl;
-//     Sleep(1000);
-//     system("cls");
-// }
-
-// Node topNode = pq.top();
-// std::cout << "Top Node g: " << topNode.g << ", h: " << topNode.heuristic << std::endl;
-
-// generateNodesAndInsert(pq, LowerDist, UpperDist, combinations, true);
-// auto md_s = manhattanDistance(start_position, LowerDist, UpperDist);
-// // std::cout << md_s << std::endl;
-
-// // auto md_t = manhattanDistance(target_position, LowerDist, UpperDist);
-// // std::cout << md_t << std::endl;
-
-// // std::cout << areEqual(start_position, target_position) << std::endl;
-
-// // draw(start_position);
-// // draw(target_position);
-
-// traverse_bits(start_position);
-// std::uint8_t target_position[16] = {0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//                                     0b00000000, 0b11100000, 0b11100000, 0b11100000,
-//                                     0b00000111, 0b00000111, 0b00000111, 0b00000000,
-//                                     0b00000000, 0b00000000, 0b00000000, 0b00000000};
-
-// std::uint8_t start_position[16] = {0b00000001, 0b00000000, 0b00000000, 0b00000000,
-//                                    0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//                                    0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//                                    0b00000000, 0b00000000, 0b00000000, 0b00000001};
-
-// std::uint8_t target_position[16] = {0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//                                     0b00000000, 0b00000000, 0b00000000, 0b10000000,
-//                                     0b00000000, 0b00000000, 0b10000000, 0b00000000,
-//                                     0b00000000, 0b00000000, 0b00000000, 0b00000000};
-
-// randomDraw(100, 300);
-
-// draw(start_position);
-// draw(target_position);
