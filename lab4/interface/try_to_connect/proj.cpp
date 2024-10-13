@@ -1,7 +1,4 @@
 #include <iostream>
-#include <thread> // Для работы с потоками
-#include <chrono> // Для работы с временем
-#include <cctype> // Для функции toupper
 #include <windows.h>
 #include <string>
 

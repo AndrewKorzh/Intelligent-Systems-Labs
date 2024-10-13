@@ -162,9 +162,12 @@ class BotManager:
                 process.terminate()
                 print("Process terminated.")
 
-    def handle_bot_p_c(self, event):
-        step = "3\n"
+    def handle_bot_p_c(
+        self,
+        event,
+    ):
 
+        step = "3\n"
         process = subprocess.Popen(
             [self.bot1_path],  # Путь к exe
             stdin=subprocess.PIPE,
