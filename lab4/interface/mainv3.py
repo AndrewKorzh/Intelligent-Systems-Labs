@@ -83,17 +83,47 @@ class BotManager:
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 x = self.offset + j * self.cell_size
-                y = self.offset + i * self.cell_size
+                y = (
+                    self.offset + (self.grid_size - 1 - i) * self.cell_size
+                )  # Обратный порядок
                 if self.grid[i][j] == 1:
                     self.canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill="white")
                 elif self.grid[i][j] == 2:
                     self.canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill="black")
+
+    def on_click_add(self, event):
+        self.canvas.unbind("<Button-1>")
+        x = (event.x - self.offset // 2) // self.cell_size
+        y = (event.y - self.offset // 2) // self.cell_size
+
+        if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+            if self.grid[self.grid_size - 1 - y][x] == 0:  # Обратный порядок
+                self.grid[self.grid_size - 1 - y][x] = self.player_turn
+                self.steps.append(
+                    (x, self.grid_size - 1 - y)
+                )  # Храним как (столбец, строка)
+                self.player_turn = 1 + self.player_turn % 2
+                self.canvas.delete("all")
+                self.draw_grid()
+                self.canvas.update()
+                cw = self.check_winner()
+                if cw != 0:
+                    print(f"PLAYER {cw} is WINNER!")
+                    self.reset()
+                    return
+                self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
+                if self.mode == "p-to-b":
+                    self.bot_step_p_to_b(
+                        (self.grid_size - 1 - y, x)
+                    )  # Обратный порядок
+        self.canvas.bind("<Button-1>", self.on_click_add)
 
     def reset(self):
         self.grid = [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         self.steps.clear()
         self.canvas.delete("all")
         self.draw_grid()
+        self.canvas.bind("<Button-1>", self.on_click_add)
         self.player_turn = 1
         self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
         if self.bot_1_process:
@@ -146,30 +176,9 @@ class BotManager:
 
         return 0
 
-    def on_click_add(self, event):
-        x = (event.x - self.offset // 2) // self.cell_size
-        y = (event.y - self.offset // 2) // self.cell_size
-
-        if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-            if self.grid[y][x] == 0:
-                self.grid[y][x] = self.player_turn
-                self.steps.append((x, y))
-                self.player_turn = 1 + self.player_turn % 2
-                self.canvas.delete("all")
-                self.draw_grid()
-                cw = self.check_winner()
-                if cw != 0:
-                    print(f"PLAYER {cw} is WINNER!")
-                    self.reset()
-                    return
-                self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
-                if self.mode == "p-to-b":
-                    self.bot_step_p_to_b((y, x))
-                    return
-
     def encode_values(self, number1, number2):
-        letter = chr(ord("a") + number1 - 1)
-        result = f"{letter}{number2}"
+        letter = chr(ord("a") + number1)
+        result = f"{letter}{number2+1}"
         return result
 
     def decode_values(self, encoded_string):
@@ -185,6 +194,7 @@ class BotManager:
     def bot_step_p_to_b(self, step):
         (y, x) = step
         step_str = f"{self.encode_values(x, y)}\n"
+        print(step_str)
         self.bot_1_process.stdin.write(step_str.encode())
         self.bot_1_process.stdin.flush()
         response = self.bot_1_process.stdout.readline().decode().strip()

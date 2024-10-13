@@ -10,7 +10,7 @@ std::string getRandomString(const std::set<std::string> &used_values)
     // Генератор случайных чисел
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> letter_distr(0, 15); // Индексы для букв от 'a' до 'p'
+    std::uniform_int_distribution<> letter_distr(0, 14); // Индексы для букв от 'a' до 'p'
     std::uniform_int_distribution<> number_distr(1, 15); // Числа от 1 до 15
 
     std::string random_value;
@@ -41,7 +41,7 @@ int main()
         // Проверяем, было ли это значение уже использовано
         if (used_values.find(s) != used_values.end())
         {
-            std::cout << "This value has already been used. Try again." << std::endl;
+            std::cout << "This value has already been used. Try again: " << s << std::endl;
             continue; // Повторяем ввод
         }
 
@@ -53,6 +53,8 @@ int main()
 
         // Добавляем сгенерированное значение в множество использованных
         used_values.insert(random_string);
+
+        Sleep(500);
 
         // Выводим сгенерированное значение
         std::cout << random_string << std::endl;
