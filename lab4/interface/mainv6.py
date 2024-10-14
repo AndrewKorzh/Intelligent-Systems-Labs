@@ -11,7 +11,6 @@ class Gomocu(abc.ABC):
     def __init__(
         self,
         root: tk.Tk,
-        grid_size=15,
         cell_size=40,
         bot1_path=None,
         bot2_path=None,
@@ -19,7 +18,7 @@ class Gomocu(abc.ABC):
     ):
         self.root = root
         self.root.title("Gomocu")
-        self.grid_size = grid_size
+        self.grid_size = 15
         self.cell_size = cell_size
         self.offset = cell_size // 2
         self.first_step = int(first_step)
@@ -61,11 +60,11 @@ class Gomocu(abc.ABC):
             self.bot_2_process = None
 
     def check_winner(self):
-        if len(self.steps) >= 100:
+        if len(self.steps) >= 225:
             return -1
         rows = len(self.grid)
         cols = len(self.grid[0])
-        target_length = 10
+        target_length = 5
 
         def check_direction(x, y, dx, dy, player):
             count = 0
@@ -137,9 +136,23 @@ class Gomocu(abc.ABC):
 
         self.grid = [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         self.steps = []
-        self.start_game()
 
         return
+
+    def decode_values(self, encoded_string):
+        encoded_string = encoded_string.strip()
+
+        letter = encoded_string[0]
+
+        y = int(encoded_string[1:]) - 1
+        x = ord(letter) - ord("a")
+
+        return y, x
+
+    def encode_values(self, number1, number2):
+        letter = chr(ord("a") + number1)
+        result = f"{letter}{number2+1}"
+        return result
 
     @abc.abstractmethod
     def start_game(self):
@@ -275,21 +288,6 @@ class GomocuPToB(Gomocu):
             self.draw_grid()
             self.canvas.update()
 
-    def encode_values(self, number1, number2):
-        letter = chr(ord("a") + number1)
-        result = f"{letter}{number2+1}"
-        return result
-
-    def decode_values(self, encoded_string):
-        encoded_string = encoded_string.strip()
-
-        letter = encoded_string[0]
-
-        y = int(encoded_string[1:]) - 1
-        x = ord(letter) - ord("a")
-
-        return y, x
-
     def bot_step(self, step):
         (y, x) = step
         step_str = f"{self.encode_values(x, y)}\n"
@@ -318,96 +316,123 @@ class GomocuBtoB(Gomocu):
     def __init__(
         self,
         root: tk.Tk,
-        grid_size=15,
         cell_size=40,
         bot1_path=None,
         bot2_path=None,
         first_step=1,
         wait_time=100,
+        round_amount=6,
     ):
-        super().__init__(root, grid_size, cell_size, bot1_path, bot2_path, first_step)
+        super().__init__(root, cell_size, bot1_path, bot2_path, first_step)
         self.round = 0
+        self.round_amount = round_amount
         self.wait_time = wait_time
+        self.score = {}
 
+    # Чтобы чередоваться можно пути местами менять
     def start_game(self):
+        for i in range(10):
+            p = self.single_round()
+            if p:
+                if p in self.score:
+                    self.score[p] += 1
+                else:
+                    self.score[p] = 1
+
+        print(self.score)
+        return
+
+    def single_round(self):
+        self.reset()
 
         if not self.bot1_path or not self.bot2_path:
             print("Не указан путь к боту")
-            return
+            return None
+        if self.round >= self.round_amount:
+            return None
 
-        first_step = self.round % 2
-        second_step = abs(first_step - 1)
-
-        bot_1_process = subprocess.Popen(
-            [self.bot1_path, f"{first_step}"],
+        self.bot_1_process = subprocess.Popen(
+            [self.bot1_path, f"0"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
 
-        bot_2_process = subprocess.Popen(
-            [self.bot1_path, f"{second_step}"],
+        self.bot_2_process = subprocess.Popen(
+            [self.bot2_path, f"1"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        bots = {
-            first_step: bot_1_process,
-            second_step: bot_2_process,
-        }
 
-        step = 0
+        response = self.bot_1_process.stdout.readline().decode().strip()
 
-        response = bots[step].stdout.readline().decode().strip()
-
-        (yn, xn) = self.decode_values(response)
-        self.grid[yn][xn] = self.player_turn
-        self.steps.append(response)
+        self.process_responce(response)
+        self.update_gui()
 
         while True:
             self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
             self.player_turn = 1 + self.player_turn % 2
-            step += 1
-            bots[step % 2].stdin.write(f"{response}\n".encode())
-            bots[step % 2].stdin.flush()
-            response = bots[step % 2].stdout.readline().decode().strip()
-            self.steps.append(response)
-            (yn, xn) = self.decode_values(response)
-            self.grid[yn][xn] = self.player_turn
-            cw = self.check_winner()
 
-            self.canvas.delete("all")
-            self.draw_grid()
-            self.canvas.update()
+            self.bot_2_process.stdin.write(f"{response}\n".encode())
+            self.bot_2_process.stdin.flush()
+            response = self.bot_2_process.stdout.readline().decode().strip()
 
-            if cw != 0:
-                print(f"PLAYER {cw} is a WINNER!")
-                self.reset()
-                return  # тут должен быть игрок либо ничья
-            if cw == -1:
-                print("Ничья")
-                self.reset()
-                return  # ничья
+            self.process_responce(response)
+            self.update_gui()
+            aaaa = self.is_he_a_winner(self.bot2_path)
+            if aaaa:
+                return aaaa
+
+            self.bot_1_process.stdin.write(f"{response}\n".encode())
+            self.bot_1_process.stdin.flush()
+            response = self.bot_1_process.stdout.readline().decode().strip()
+
+            self.process_responce(response)
+            self.update_gui()
+            aaaa = self.is_he_a_winner(self.bot1_path)
+            if aaaa:
+                return aaaa
 
         return
 
-    def decode_values(self, encoded_string):
-        encoded_string = encoded_string.strip()
+    # Тут сделать булевую которая всё делает и отрубает всё нафиг (в рамках той функции из которой она)
+    # переделать check_winner - мы вроде знаем, где завершение было, всё равно не понятно, у нас 3 состояния даже при таком раскладе
+    # Перечислимый тип
+    # check_winner - оставить
+    # Только еще добавить ничью в другие классф
+    def is_he_a_winner(self, path):
+        check = self.check_winner()
+        if check == -1:
+            print("Ничья")
+            self.reset()
+            return "nouone"
+        elif check != 0:
+            print(f"winner: {path}")
+            self.reset()
+            return path
+        return None
 
-        letter = encoded_string[0]
+    def process_responce(self, response):
+        (yn, xn) = self.decode_values(response)
+        self.grid[yn][xn] = self.player_turn
+        self.steps.append(response)
 
-        y = int(encoded_string[1:]) - 1
-        x = ord(letter) - ord("a")
-
-        return y, x
+    def update_gui(self):
+        self.canvas.delete("all")
+        self.draw_grid()
+        self.canvas.update()
+        return
 
 
 if __name__ == "__main__":
+
     root = tk.Tk()
 
     game = GomocuBtoB(
         root=root,
         first_step="1",
+        cell_size=40,
         bot1_path="random_step.exe",
         bot2_path="random_step2.exe",
     )
