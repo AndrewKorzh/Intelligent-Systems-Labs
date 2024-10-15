@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
         used_values.insert(random_string);
         move_stack.push(random_string);
 
-        Sleep(10);
+        Sleep(1);
 
         std::cout << random_string << std::endl;
 

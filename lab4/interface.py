@@ -331,7 +331,7 @@ class GomocuBtoB(Gomocu):
 
     # Чтобы чередоваться можно пути местами менять
     def start_game(self):
-        for i in range(10):
+        for i in range(3):
             p = self.single_round()
             if p:
                 if p in self.score:
@@ -380,9 +380,9 @@ class GomocuBtoB(Gomocu):
 
             self.process_responce(response)
             self.update_gui()
-            aaaa = self.is_he_a_winner(self.bot2_path)
-            if aaaa:
-                return aaaa
+            winner_check = self.is_he_a_winner(self.bot2_path)
+            if winner_check:
+                return winner_check
 
             self.bot_1_process.stdin.write(f"{response}\n".encode())
             self.bot_1_process.stdin.flush()
@@ -390,9 +390,9 @@ class GomocuBtoB(Gomocu):
 
             self.process_responce(response)
             self.update_gui()
-            aaaa = self.is_he_a_winner(self.bot1_path)
-            if aaaa:
-                return aaaa
+            winner_check = self.is_he_a_winner(self.bot1_path)
+            if winner_check:
+                return winner_check
 
         return
 
@@ -429,7 +429,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
 
-    game = GomocuBtoB(
+    game = GomocuPToB(
         root=root,
         first_step="1",
         cell_size=40,
