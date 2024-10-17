@@ -446,8 +446,9 @@ if __name__ == "__main__":
     game = GomocuPToB(
         root=root,
         cell_size=40,
-        first_step="0",
-        bot2_path="bot_random_step.exe",
-        bot1_path="bot_closest_to_center.exe",
+        # round_amount=10,
+        first_step="1",
+        bot1_path="bot_final.exe",
+        bot2_path="bot_final.exe",
     )
     game.start_game()
