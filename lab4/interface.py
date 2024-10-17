@@ -443,11 +443,11 @@ if __name__ == "__main__":
 
     root = tk.Tk()
 
-    game = GomocuBtoB(
+    game = GomocuPToB(
         root=root,
-        first_step="1",
         cell_size=40,
-        bot1_path="bot_random_step.exe",
-        bot2_path="bot_closest_to_center.exe",
+        first_step="0",
+        bot2_path="bot_random_step.exe",
+        bot1_path="bot_closest_to_center.exe",
     )
     game.start_game()

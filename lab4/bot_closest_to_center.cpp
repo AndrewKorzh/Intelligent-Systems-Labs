@@ -155,12 +155,18 @@ int main(int argc, char *argv[])
 
     resetField(field);
 
+    // Естественно назначать значения ячеек в зависимоти от того начинало ли
+
     if (argv[1][0] == '0')
     {
         std::string ns = nextStepClosestToCenter(field, centerDist);
 
         steps.push(ns);
         std::cout << ns << std::endl;
+        tuple<int, int> coordinates = comToIndexes(ns);
+        int i = get<0>(coordinates);
+        int j = get<1>(coordinates);
+        field[i][j] = '0';
     }
 
     while (true)
