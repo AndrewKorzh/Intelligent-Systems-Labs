@@ -267,21 +267,23 @@ class GomocuPToB(Gomocu):
 
         if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
             if self.grid[self.grid_size - 1 - y][x] == 0:
-                self.grid[self.grid_size - 1 - y][x] = self.player_turn
-                self.steps.append((x, self.grid_size - 1 - y))
-                self.player_turn = 1 + self.player_turn % 2
-                self.canvas.delete("all")
-                self.draw_grid()
-                self.canvas.update()
-                cw = self.check_winner()
-                if cw != 0:
-                    print(f"PLAYER {cw} is WINNER!")
-                    self.reset()
-                    return
-                self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
+                if self.grid[self.grid_size - 1 - y][x] == 0:
+                    self.grid[self.grid_size - 1 - y][x] = self.player_turn
+                    self.steps.append((x, self.grid_size - 1 - y))
+                    self.player_turn = 1 + self.player_turn % 2
+                    self.canvas.delete("all")
+                    self.draw_grid()
+                    self.canvas.update()
+                    cw = self.check_winner()
+                    if cw != 0:
+                        print(f"PLAYER {cw} is WINNER!")
+                        self.reset()
+                        return
+                    self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
 
-                if self.bot_step((self.grid_size - 1 - y, x)):
-                    self.canvas.bind("<Button-1>", self.p_click)
+                    if self.bot_step((self.grid_size - 1 - y, x)):
+                        self.canvas.bind("<Button-1>", self.p_click)
+        self.canvas.bind("<Button-1>", self.p_click)
 
     def on_back(self):
         if self.steps and len(self.steps) > 0:

@@ -6,6 +6,14 @@
 #include <vector>
 #include <stack>
 #include <vector>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <cmath>
+#include <map>
+#include <limits>
 
 using namespace std;
 
@@ -17,7 +25,7 @@ void fillCenterDistArray(float array[FIELD_SIZE][FIELD_SIZE], float k)
     {
         for (int j = 0; j < FIELD_SIZE; ++j)
         {
-            array[i][j] = ((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0) * k;
+            array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
         }
     }
 }
@@ -48,10 +56,16 @@ std::string indexesToCom(int i, int j)
     char c = 'a' + j;
     return c + std::to_string(i + 1); // Возврат ошибки, если индекс не в диапазоне
 }
+char flip(char c)
+{
+    return (c == '0') ? '1' : '0';
+}
 
 float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], int i, int j, char simbol, int target_len = 5)
 {
-    std::vector<std::pair<int, int>> vertical;
+
+    std::vector<std::pair<int, int>>
+        vertical;
     std::vector<std::pair<int, int>> horizontal;
     std::vector<std::pair<int, int>> mainDiagonal;
     std::vector<std::pair<int, int>> secondaryDiagonal;
@@ -100,9 +114,11 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
     int len = 0;
     int collected_detail_dist = 0;
 
-    // Продолжает строить тупиковые линии
+    // добавить штуку которая добавляет определённые коэф-ты для расстояний
     for (size_t idx = 0; idx < directions.size(); ++idx)
     {
+        len = 0;
+        h_local = 0;
         // std::cout << "Direction " << idx + 1 << ":\n";
         for (const auto &coord : directions[idx])
         {
@@ -117,23 +133,29 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
             else if (field[f][s] == simbol)
             {
                 collected_detail_dist += 1;
-                h_local += (1 * collected_detail_dist);
+                h_local += (1 * collected_detail_dist * collected_detail_dist);
                 h_local += centerDist[f][s];
                 len += 1;
+                if (collected_detail_dist >= target_len)
+                {
+                    return std::numeric_limits<float>::max();
+                }
             }
             else
             {
                 collected_detail_dist = 0;
-                if (len > target_len) // >=
+                if (len >= target_len)
                 {
                     h_general += h_local;
                 }
+
                 h_local = 0;
                 len = 0;
             }
-            h_general += h_local;
-            h_local = 0;
-            len = 0;
+            if (len >= target_len)
+            {
+                h_general += h_local;
+            }
         }
     }
     return h_general;
@@ -178,11 +200,6 @@ void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
     }
 }
 
-char flip(char c)
-{
-    return (c == '0') ? '1' : '0';
-}
-
 int main(int argc, char *argv[])
 {
     std::string s;
@@ -193,7 +210,7 @@ int main(int argc, char *argv[])
 
     std::stack<std::string> steps;
 
-    fillCenterDistArray(centerDist, 1);
+    fillCenterDistArray(centerDist, 100);
 
     char simbol;
 
@@ -210,6 +227,10 @@ int main(int argc, char *argv[])
         int i = get<0>(coordinates);
         int j = get<1>(coordinates);
         field[i][j] = simbol;
+    }
+    else
+    {
+        simbol = '1';
     }
 
     while (true)
