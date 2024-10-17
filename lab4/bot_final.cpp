@@ -98,7 +98,9 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
     float h_general = 0;
     float h_local = 0;
     int len = 0;
+    int collected_detail_dist = 0;
 
+    // Продолжает строить тупиковые линии
     for (size_t idx = 0; idx < directions.size(); ++idx)
     {
         // std::cout << "Direction " << idx + 1 << ":\n";
@@ -110,16 +112,19 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
             if (field[f][s] == '-')
             {
                 len += 1;
+                collected_detail_dist = 0;
             }
             else if (field[f][s] == simbol)
             {
-                h_local += 1;
+                collected_detail_dist += 1;
+                h_local += (1 * collected_detail_dist);
                 h_local += centerDist[f][s];
                 len += 1;
             }
             else
             {
-                if (len >= target_len)
+                collected_detail_dist = 0;
+                if (len > target_len) // >=
                 {
                     h_general += h_local;
                 }
