@@ -98,6 +98,7 @@ class Gomocu(abc.ABC):
         return 0
 
     def draw_grid(self):
+        oval_radius = 7
         for i in range(self.grid_size):
             self.canvas.create_line(
                 self.offset + i * self.cell_size,
@@ -119,9 +120,21 @@ class Gomocu(abc.ABC):
                     self.offset + (self.grid_size - 1 - i) * self.cell_size
                 )  # Обратный порядок
                 if self.grid[i][j] == 1:
-                    self.canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill="white")
+                    self.canvas.create_oval(
+                        x - oval_radius,
+                        y - oval_radius,
+                        x + oval_radius,
+                        y + oval_radius,
+                        fill="white",
+                    )
                 elif self.grid[i][j] == 2:
-                    self.canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill="black")
+                    self.canvas.create_oval(
+                        x - oval_radius,
+                        y - oval_radius,
+                        x + oval_radius,
+                        y + oval_radius,
+                        fill="black",
+                    )
 
     def reset(self):
         self.player_turn = 1
@@ -267,8 +280,8 @@ class GomocuPToB(Gomocu):
                     return
                 self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
 
-                self.bot_step((self.grid_size - 1 - y, x))
-        self.canvas.bind("<Button-1>", self.p_click)
+                if self.bot_step((self.grid_size - 1 - y, x)):
+                    self.canvas.bind("<Button-1>", self.p_click)
 
     def on_back(self):
         if self.steps and len(self.steps) > 0:
@@ -289,6 +302,7 @@ class GomocuPToB(Gomocu):
             self.canvas.update()
 
     def bot_step(self, step):
+        self.canvas.unbind("<Button-1>")
         (y, x) = step
         step_str = f"{self.encode_values(x, y)}\n"
         print(step_str)
@@ -302,14 +316,14 @@ class GomocuPToB(Gomocu):
         cw = self.check_winner()
         if cw != 0:
             print(f"PLAYER {cw} is a WINNER!")
-            self.reset()
-            return
+            self.canvas.delete("all")
+            self.draw_grid()
+            return False
         self.player_turn = 1 + self.player_turn % 2
         self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
         self.canvas.delete("all")
         self.draw_grid()
-
-        return
+        return True
 
 
 class GomocuBtoB(Gomocu):
@@ -331,7 +345,7 @@ class GomocuBtoB(Gomocu):
 
     # Чтобы чередоваться можно пути местами менять
     def start_game(self):
-        for i in range(3):
+        for i in range(self.round_amount):
             p = self.single_round()
             if p:
                 if p in self.score:
@@ -429,11 +443,11 @@ if __name__ == "__main__":
 
     root = tk.Tk()
 
-    game = GomocuPToB(
+    game = GomocuBtoB(
         root=root,
         first_step="1",
         cell_size=40,
-        bot1_path="random_step.exe",
-        bot2_path="random_step2.exe",
+        bot1_path="bot_random_step.exe",
+        bot2_path="bot_closest_to_center.exe",
     )
     game.start_game()
