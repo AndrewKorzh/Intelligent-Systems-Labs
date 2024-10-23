@@ -277,12 +277,16 @@ class GomocuPToB(Gomocu):
                     cw = self.check_winner()
                     if cw != 0:
                         print(f"PLAYER {cw} is WINNER!")
+                        self.canvas.unbind("<Button-1>")
                         self.reset()
                         return
                     self.player_label.config(text=f"PLAYER {self.player_turn} TURN")
 
                     if self.bot_step((self.grid_size - 1 - y, x)):
                         self.canvas.bind("<Button-1>", self.p_click)
+                    else:
+                        self.canvas.unbind("<Button-1>")
+                        return
         self.canvas.bind("<Button-1>", self.p_click)
 
     def on_back(self):
@@ -307,10 +311,14 @@ class GomocuPToB(Gomocu):
         self.canvas.unbind("<Button-1>")
         (y, x) = step
         step_str = f"{self.encode_values(x, y)}\n"
-        print(step_str)
+        # print(step_str)
         self.bot_1_process.stdin.write(step_str.encode())
         self.bot_1_process.stdin.flush()
+        # start_time = time.time()
         response = self.bot_1_process.stdout.readline().decode().strip()
+        # end_time = time.time()
+        # # response_time = end_time - start_time  # Время в секундах
+        # # print(f"Время ответа бота: {response_time:.6f} секунд")
         # print(f"from bot {response}")
         (yn, xn) = self.decode_values(response)
         self.grid[yn][xn] = self.player_turn
@@ -318,6 +326,7 @@ class GomocuPToB(Gomocu):
         cw = self.check_winner()
         if cw != 0:
             print(f"PLAYER {cw} is a WINNER!")
+            self.canvas.unbind("<Button-1>")
             self.canvas.delete("all")
             self.draw_grid()
             return False
@@ -449,8 +458,8 @@ if __name__ == "__main__":
         root=root,
         cell_size=40,
         # round_amount=10,
-        first_step="1",
+        first_step="0",
         bot1_path="bot_final.exe",
-        bot2_path="bot_final.exe",
+        bot2_path="bot_random_step.exe",
     )
     game.start_game()

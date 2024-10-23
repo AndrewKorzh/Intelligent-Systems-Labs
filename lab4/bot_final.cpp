@@ -161,12 +161,139 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
     return h_general;
 }
 
+float processLine(const std::vector<std::pair<int, int>> &line, const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+{
+    float h_general = 0;
+    float h_local = 0;
+    int len = 0;
+    int collected_detail_dist = 0;
+
+    for (const auto &coord : line)
+    {
+        int f = coord.first;
+        int s = coord.second;
+        if (field[f][s] == '-')
+        {
+            len += 1;
+            collected_detail_dist = 0;
+        }
+        else if (field[f][s] == simbol)
+        {
+            collected_detail_dist += 1;
+            h_local += (1 * collected_detail_dist * collected_detail_dist * collected_detail_dist);
+            h_local += centerDist[f][s];
+            len += 1;
+            if (collected_detail_dist >= target_len)
+            {
+                return std::numeric_limits<float>::max();
+            }
+        }
+        else
+        {
+            collected_detail_dist = 0;
+            if (len >= target_len)
+            {
+                h_general += h_local;
+            }
+
+            h_local = 0;
+            len = 0;
+        }
+        if (len >= target_len)
+        {
+            h_general += h_local;
+        }
+    }
+    return h_general;
+    // std::cout << std::endl;
+}
+
+float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+{
+    float h = 0;
+    // Обработка горизонтальных линий
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        std::vector<std::pair<int, int>> horizontal;
+        for (int col = 0; col < FIELD_SIZE; ++col)
+        {
+            horizontal.emplace_back(i, col);
+        }
+        h += processLine(horizontal, field, centerDist, simbol); // Вызов заглушки
+    }
+
+    // Обработка вертикальных линий
+    for (int j = 0; j < FIELD_SIZE; ++j)
+    {
+        std::vector<std::pair<int, int>> vertical;
+        for (int row = 0; row < FIELD_SIZE; ++row)
+        {
+            vertical.emplace_back(row, j);
+        }
+        h += processLine(vertical, field, centerDist, simbol); // Вызов заглушки
+    }
+
+    // Обработка главных диагоналей
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        std::vector<std::pair<int, int>> mainDiagonal;
+        int diag_i = i, diag_j = 0;
+        while (diag_i < FIELD_SIZE && diag_j < FIELD_SIZE)
+        {
+            mainDiagonal.emplace_back(diag_i, diag_j);
+            diag_i++;
+            diag_j++;
+        }
+        h += processLine(mainDiagonal, field, centerDist, simbol); // Вызов заглушки
+    }
+    for (int j = 1; j < FIELD_SIZE; ++j)
+    {
+        std::vector<std::pair<int, int>> mainDiagonal;
+        int diag_i = 0, diag_j = j;
+        while (diag_i < FIELD_SIZE && diag_j < FIELD_SIZE)
+        {
+            mainDiagonal.emplace_back(diag_i, diag_j);
+            diag_i++;
+            diag_j++;
+        }
+        h += processLine(mainDiagonal, field, centerDist, simbol);
+        ; // Вызов заглушки
+    }
+
+    // Обработка побочных диагоналей
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        std::vector<std::pair<int, int>> secondaryDiagonal;
+        int diag_i = i, diag_j = FIELD_SIZE - 1;
+        while (diag_i < FIELD_SIZE && diag_j >= 0)
+        {
+            secondaryDiagonal.emplace_back(diag_i, diag_j);
+            diag_i++;
+            diag_j--;
+        }
+        h += processLine(secondaryDiagonal, field, centerDist, simbol); // Вызов заглушки
+    }
+    for (int j = FIELD_SIZE - 2; j >= 0; --j)
+    {
+        std::vector<std::pair<int, int>> secondaryDiagonal;
+        int diag_i = 0, diag_j = j;
+        while (diag_i < FIELD_SIZE && diag_j >= 0)
+        {
+            secondaryDiagonal.emplace_back(diag_i, diag_j);
+            diag_i++;
+            diag_j--;
+        }
+        h += processLine(secondaryDiagonal, field, centerDist, simbol); // Вызов заглушки
+    }
+    return h;
+}
+
 std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol)
 {
 
     int best_i = 0;
     int best_j = 0;
-    float best_h = 0;
+    float best_h = -1000000;
 
     for (int i = 0; i < FIELD_SIZE; ++i)
     {
@@ -175,7 +302,7 @@ std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&c
             if (field[i][j] == '-')
             {
                 field[i][j] = simbol;
-                float h = hForOneEll(field, centerDist, i, j, simbol);
+                float h = totalHeuristic(field, centerDist, simbol) - totalHeuristic(field, centerDist, flip(simbol)) * 3; // hForOneEll(field, centerDist, i, j, simbol); //
                 field[i][j] = '-';
                 if (h > best_h)
                 {
@@ -188,6 +315,7 @@ std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&c
     }
     return indexesToCom(best_i, best_j);
 }
+
 void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
 {
     for (int i = 0; i < FIELD_SIZE; ++i)
@@ -210,7 +338,7 @@ int main(int argc, char *argv[])
 
     std::stack<std::string> steps;
 
-    fillCenterDistArray(centerDist, 100);
+    fillCenterDistArray(centerDist, 0.5);
 
     char simbol;
 
@@ -273,7 +401,6 @@ int main(int argc, char *argv[])
         field[i][j] = simbol;
 
         steps.push(ns);
-        Sleep(1);
         std::cout << ns << std::endl;
 
         if (steps.size() == 225)
