@@ -291,6 +291,7 @@ class GomocuPToB(Gomocu):
 
     def on_back(self):
         if self.steps and len(self.steps) > 0:
+            self.canvas.bind("<Button-1>", self.p_click)
             (x, y) = self.steps.pop()
             self.grid[y][x] = 0
 

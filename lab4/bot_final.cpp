@@ -14,6 +14,8 @@
 #include <cmath>
 #include <map>
 #include <limits>
+#include <queue>
+#include <vector>
 
 using namespace std;
 
@@ -27,6 +29,18 @@ void fillCenterDistArray(float array[FIELD_SIZE][FIELD_SIZE], float k)
         {
             array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
         }
+    }
+}
+
+void printCharArray(char array[FIELD_SIZE][FIELD_SIZE])
+{
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        for (int j = 0; j < FIELD_SIZE; ++j)
+        {
+            std::cout << array[i][j] << ' '; // Выводим каждый символ с пробелом
+        }
+        std::cout << std::endl; // Переход на новую строку
     }
 }
 
@@ -185,7 +199,7 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
             len += 1;
             if (collected_detail_dist >= target_len)
             {
-                return std::numeric_limits<float>::max();
+                return 420000; // std::numeric_limits<float>::max();
             }
         }
         else
@@ -208,7 +222,7 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
     // std::cout << std::endl;
 }
 
-float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
 {
     float h = 0;
     // Обработка горизонтальных линий
@@ -287,6 +301,104 @@ float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], const float (&cen
     }
     return h;
 }
+float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+{
+    return totalHeuristicOnePlayer(field, centerDist, simbol) - totalHeuristicOnePlayer(field, centerDist, flip(simbol)) * 3;
+}
+struct Node
+{
+    char field[FIELD_SIZE][FIELD_SIZE];
+    int parent_id;
+    float h;
+    int depth;
+    int i;
+    int j;
+
+    Node(char (&field)[FIELD_SIZE][FIELD_SIZE], int parent_id, int h, int depth, int i, int j) : parent_id(parent_id), h(h), depth(depth), i(i), j(j)
+    {
+        std::copy(&field[0][0], &field[0][0] + FIELD_SIZE * FIELD_SIZE, &this->field[0][0]);
+    }
+};
+struct CompareNode
+{
+    bool operator()(const Node &n1, const Node &n2)
+    {
+        return n1.h < n2.h; // Большие значения h будут иметь больший приоритет
+    }
+};
+std::string nextStepBestMinimax(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol)
+{
+    int max_depth = 5;
+    int wight_search = 1;
+    auto start = simbol;
+    std::deque<Node> nodes;
+    nodes.emplace_back(field, -1, 0, 0, -1, 1);
+    // cout << nodes.size() << endl;
+    // cout << nodes.front().field[0][0] << endl;
+    // printCharArray(nodes.front().field);
+
+    int index_current = 0;
+
+    while (true)
+    {
+        if (index_current > nodes.size() - 1)
+        {
+            break;
+        }
+        auto n = nodes[index_current];
+        if (n.depth >= max_depth)
+        {
+            index_current++;
+            continue;
+        }
+
+        if (n.depth % 2 == 0)
+        {
+
+            simbol = start; //'0'; //
+        }
+        else
+        {
+            simbol = flip(start); // ;
+        }
+
+        // cout << simbol << "\n";
+
+        std::priority_queue<Node, std::vector<Node>, CompareNode> new_nodes_pq;
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (n.field[i][j] == '-')
+                {
+                    n.field[i][j] = simbol;
+                    auto h = totalHeuristic(n.field, centerDist, simbol); // push(Node(1, 5))
+                    new_nodes_pq.push(Node(n.field, index_current, h, n.depth + 1, i, j));
+                    n.field[i][j] = '-';
+                }
+            }
+        }
+        int count = 0;
+        while (!new_nodes_pq.empty())
+        {
+            if (count < wight_search)
+            {
+                nodes.push_back(new_nodes_pq.top());
+            }
+            new_nodes_pq.pop(); // Удаляем из priority_queue
+            ++count;
+        }
+        index_current++;
+    }
+
+    for (std::deque<Node>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+    {
+        printCharArray(it->field);
+        cout << "\n\n";
+    }
+    cout << nodes.size() << "\n";
+    return "EEEEE";
+}
 
 std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol)
 {
@@ -302,7 +414,7 @@ std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&c
             if (field[i][j] == '-')
             {
                 field[i][j] = simbol;
-                float h = totalHeuristic(field, centerDist, simbol) - totalHeuristic(field, centerDist, flip(simbol)) * 3; // hForOneEll(field, centerDist, i, j, simbol); //
+                float h = totalHeuristic(field, centerDist, simbol); // hForOneEll(field, centerDist, i, j, simbol); //
                 field[i][j] = '-';
                 if (h > best_h)
                 {
@@ -328,8 +440,25 @@ void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
     }
 }
 
+void test()
+{
+    std::string s;
+
+    float centerDist[FIELD_SIZE][FIELD_SIZE];
+
+    char field[FIELD_SIZE][FIELD_SIZE];
+    resetField(field);
+
+    fillCenterDistArray(centerDist, 0.5);
+
+    char simbol = '0';
+    nextStepBestMinimax(field, centerDist, simbol);
+    exit;
+}
+
 int main(int argc, char *argv[])
 {
+    test();
     std::string s;
 
     float centerDist[FIELD_SIZE][FIELD_SIZE];
@@ -375,6 +504,11 @@ int main(int argc, char *argv[])
                 int i = get<0>(coordinates);
                 int j = get<1>(coordinates);
                 field[i][j] = '-';
+                std::cout << "Last move undone: " << last_move << std::endl;
+            }
+            else
+            {
+                std::cout << "No moves to undo!" << std::endl;
             }
 
             continue;
