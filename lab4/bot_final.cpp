@@ -24,9 +24,9 @@ void printCharArray(char array[FIELD_SIZE][FIELD_SIZE])
     {
         for (int j = 0; j < FIELD_SIZE; ++j)
         {
-            std::cout << array[i][j] << ' '; // Выводим каждый символ с пробелом
+            std::cout << array[i][j] << ' ';
         }
-        std::cout << std::endl; // Переход на новую строку
+        std::cout << std::endl;
     }
 }
 void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
@@ -81,6 +81,7 @@ char flip(char c)
     return (c == '0') ? '1' : '0';
 }
 
+// Можно доделать -
 float processLine(const std::vector<std::pair<int, int>> &line, const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
 {
     int k = 0.5;
@@ -107,7 +108,7 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
             len += 1;
             if (collected_detail_dist >= target_len)
             {
-                return MAX_H; // std::numeric_limits<float>::max();
+                return MAX_H;
             }
         }
         else
@@ -127,7 +128,6 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
         }
     }
     return h_general;
-    // std::cout << std::endl;
 }
 
 float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
@@ -355,7 +355,7 @@ bool isGameOver(const char field[FIELD_SIZE][FIELD_SIZE], int target_len = 5)
 
 std::tuple<int, int, float> minimax(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol, char start_simbol, int depth, float a, float b, int row, int col, bool isMaxim)
 {
-    if (depth <= 0 || isGameOver(field)) // || a >= MAX_H || b >= MAX_H - надо добавить конец игры
+    if (depth <= 0 || isGameOver(field))
     {
         float total_h = totalHeuristic(field, start_simbol);
         return std::make_tuple(row, col, total_h);
@@ -365,7 +365,6 @@ std::tuple<int, int, float> minimax(char (&field)[FIELD_SIZE][FIELD_SIZE], char 
     {
 
         float best_score = -std::numeric_limits<float>::max();
-        // best_row and best_col - не нужны
         int best_row = -1;
         int best_col = -1;
         for (int i = 0; i < FIELD_SIZE; ++i)
@@ -444,25 +443,8 @@ std::string nextStepMinimax(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol)
     return indexesToCom(best_i, best_j);
 }
 
-void test()
-{
-    std::string s;
-
-    float centerDist[FIELD_SIZE][FIELD_SIZE];
-
-    char field[FIELD_SIZE][FIELD_SIZE];
-    resetField(field);
-
-    fillCenterDistArray(centerDist, 0.5);
-
-    char simbol = '0';
-    // nextStepBestMinimax(field,  simbol);
-    exit;
-}
-
 int main(int argc, char *argv[])
 {
-    // test();
     std::string s;
 
     float centerDist[FIELD_SIZE][FIELD_SIZE];
@@ -480,7 +462,7 @@ int main(int argc, char *argv[])
     if (argv[1][0] == '0')
     {
         simbol = '0';
-        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
+        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol);
 
         steps.push(ns);
         std::cout << ns << std::endl;
@@ -531,7 +513,7 @@ int main(int argc, char *argv[])
 
         steps.push(s);
 
-        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
+        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol);
 
         tuple<int, int> coordinates_resp = comToIndexes(ns);
         i = get<0>(coordinates_resp);
