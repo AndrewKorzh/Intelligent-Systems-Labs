@@ -203,27 +203,6 @@ float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int 
 {
     return totalHeuristicOnePlayer(field, simbol) - totalHeuristicOnePlayer(field, flip(simbol)) * 3;
 }
-struct Node
-{
-    char field[FIELD_SIZE][FIELD_SIZE];
-    int parent_id;
-    float h;
-    int depth;
-    int i;
-    int j;
-
-    Node(char (&field)[FIELD_SIZE][FIELD_SIZE], int parent_id, int h, int depth, int i, int j) : parent_id(parent_id), h(h), depth(depth), i(i), j(j)
-    {
-        std::copy(&field[0][0], &field[0][0] + FIELD_SIZE * FIELD_SIZE, &this->field[0][0]);
-    }
-};
-struct CompareNode
-{
-    bool operator()(const Node &n1, const Node &n2)
-    {
-        return n1.h < n2.h; // Большие значения h будут иметь больший приоритет
-    }
-};
 
 std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol)
 {
