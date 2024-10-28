@@ -5,17 +5,12 @@
 #include <windows.h>
 #include <vector>
 #include <stack>
-#include <vector>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <tuple>
+#include <limits>
+#include <deque>
+#include <queue>
 #include <utility>
 #include <cmath>
 #include <map>
-#include <limits>
-#include <queue>
-#include <vector>
 
 using namespace std;
 
@@ -75,8 +70,9 @@ char flip(char c)
     return (c == '0') ? '1' : '0';
 }
 
-float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], int i, int j, char simbol, int target_len = 5)
+float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], int i, int j, char simbol, int target_len = 5)
 {
+    int k = 0.5;
 
     std::vector<std::pair<int, int>>
         vertical;
@@ -148,7 +144,9 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
             {
                 collected_detail_dist += 1;
                 h_local += (1 * collected_detail_dist * collected_detail_dist);
-                h_local += centerDist[f][s];
+                // array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
+                // h_local += centerDist[f][s];
+                h_local += (((7.0 - abs(8 - (f + 1))) / 7.0 + (7.0 - abs(8 - (s + 1))) / 7.0)) * k;
                 len += 1;
                 if (collected_detail_dist >= target_len)
                 {
@@ -175,8 +173,9 @@ float hForOneEll(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerD
     return h_general;
 }
 
-float processLine(const std::vector<std::pair<int, int>> &line, const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+float processLine(const std::vector<std::pair<int, int>> &line, const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
 {
+    int k = 0.5;
     float h_general = 0;
     float h_local = 0;
     int len = 0;
@@ -195,7 +194,9 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
         {
             collected_detail_dist += 1;
             h_local += (1 * collected_detail_dist * collected_detail_dist * collected_detail_dist);
-            h_local += centerDist[f][s];
+            // array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
+            // h_local += centerDist[f][s];
+            h_local += (((7.0 - abs(8 - (f + 1))) / 7.0 + (7.0 - abs(8 - (s + 1))) / 7.0)) * k;
             len += 1;
             if (collected_detail_dist >= target_len)
             {
@@ -222,7 +223,7 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
     // std::cout << std::endl;
 }
 
-float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
 {
     float h = 0;
     // Обработка горизонтальных линий
@@ -233,7 +234,7 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
         {
             horizontal.emplace_back(i, col);
         }
-        h += processLine(horizontal, field, centerDist, simbol); // Вызов заглушки
+        h += processLine(horizontal, field, simbol); // Вызов заглушки
     }
 
     // Обработка вертикальных линий
@@ -244,7 +245,7 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
         {
             vertical.emplace_back(row, j);
         }
-        h += processLine(vertical, field, centerDist, simbol); // Вызов заглушки
+        h += processLine(vertical, field, simbol); // Вызов заглушки
     }
 
     // Обработка главных диагоналей
@@ -258,7 +259,7 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
             diag_i++;
             diag_j++;
         }
-        h += processLine(mainDiagonal, field, centerDist, simbol); // Вызов заглушки
+        h += processLine(mainDiagonal, field, simbol); // Вызов заглушки
     }
     for (int j = 1; j < FIELD_SIZE; ++j)
     {
@@ -270,7 +271,7 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
             diag_i++;
             diag_j++;
         }
-        h += processLine(mainDiagonal, field, centerDist, simbol);
+        h += processLine(mainDiagonal, field, simbol);
         ; // Вызов заглушки
     }
 
@@ -285,7 +286,7 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
             diag_i++;
             diag_j--;
         }
-        h += processLine(secondaryDiagonal, field, centerDist, simbol); // Вызов заглушки
+        h += processLine(secondaryDiagonal, field, simbol); // Вызов заглушки
     }
     for (int j = FIELD_SIZE - 2; j >= 0; --j)
     {
@@ -297,13 +298,13 @@ float totalHeuristicOnePlayer(const char field[FIELD_SIZE][FIELD_SIZE], const fl
             diag_i++;
             diag_j--;
         }
-        h += processLine(secondaryDiagonal, field, centerDist, simbol); // Вызов заглушки
+        h += processLine(secondaryDiagonal, field, simbol); // Вызов заглушки
     }
     return h;
 }
-float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
+float totalHeuristic(const char field[FIELD_SIZE][FIELD_SIZE], char simbol, int target_len = 5)
 {
-    return totalHeuristicOnePlayer(field, centerDist, simbol) - totalHeuristicOnePlayer(field, centerDist, flip(simbol)) * 3;
+    return totalHeuristicOnePlayer(field, simbol) - totalHeuristicOnePlayer(field, flip(simbol)) * 3;
 }
 struct Node
 {
@@ -326,81 +327,8 @@ struct CompareNode
         return n1.h < n2.h; // Большие значения h будут иметь больший приоритет
     }
 };
-std::string nextStepBestMinimax(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol)
-{
-    int max_depth = 5;
-    int wight_search = 1;
-    auto start = simbol;
-    std::deque<Node> nodes;
-    nodes.emplace_back(field, -1, 0, 0, -1, 1);
-    // cout << nodes.size() << endl;
-    // cout << nodes.front().field[0][0] << endl;
-    // printCharArray(nodes.front().field);
 
-    int index_current = 0;
-
-    while (true)
-    {
-        if (index_current > nodes.size() - 1)
-        {
-            break;
-        }
-        auto n = nodes[index_current];
-        if (n.depth >= max_depth)
-        {
-            index_current++;
-            continue;
-        }
-
-        if (n.depth % 2 == 0)
-        {
-
-            simbol = start; //'0'; //
-        }
-        else
-        {
-            simbol = flip(start); // ;
-        }
-
-        // cout << simbol << "\n";
-
-        std::priority_queue<Node, std::vector<Node>, CompareNode> new_nodes_pq;
-        for (int i = 0; i < FIELD_SIZE; ++i)
-        {
-            for (int j = 0; j < FIELD_SIZE; ++j)
-            {
-                if (n.field[i][j] == '-')
-                {
-                    n.field[i][j] = simbol;
-                    auto h = totalHeuristic(n.field, centerDist, simbol); // push(Node(1, 5))
-                    new_nodes_pq.push(Node(n.field, index_current, h, n.depth + 1, i, j));
-                    n.field[i][j] = '-';
-                }
-            }
-        }
-        int count = 0;
-        while (!new_nodes_pq.empty())
-        {
-            if (count < wight_search)
-            {
-                nodes.push_back(new_nodes_pq.top());
-            }
-            new_nodes_pq.pop(); // Удаляем из priority_queue
-            ++count;
-        }
-        index_current++;
-    }
-
-    for (std::deque<Node>::iterator it = nodes.begin(); it != nodes.end(); ++it)
-    {
-        printCharArray(it->field);
-        cout << "\n\n";
-    }
-    cout << nodes.size() << "\n";
-    return "EEEEE";
-}
-
-std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&centerDist)[FIELD_SIZE][FIELD_SIZE], char simbol)
+std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol)
 {
 
     int best_i = 0;
@@ -414,7 +342,7 @@ std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], const float (&c
             if (field[i][j] == '-')
             {
                 field[i][j] = simbol;
-                float h = totalHeuristic(field, centerDist, simbol); // hForOneEll(field, centerDist, i, j, simbol); //
+                float h = totalHeuristic(field, simbol); // hForOneEll(field, i, j, simbol); //
                 field[i][j] = '-';
                 if (h > best_h)
                 {
@@ -440,6 +368,78 @@ void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
     }
 }
 
+std::pair<int, int> minimax(char field[FIELD_SIZE][FIELD_SIZE], char simbol, int depth, bool isMaximizing)
+{
+    // Проверка на выигрыш
+    float currentH = totalHeuristic(field, simbol);
+    if (currentH >= std::numeric_limits<float>::max())
+        return {-1, 1000 - depth}; // Максимальная оценка для максимизирующего
+    if (currentH <= -std::numeric_limits<float>::max())
+        return {-1, depth - 1000}; // Максимальная оценка для минимизирующего
+
+    if (depth == 0)
+        return {-1, 0}; // Достигнута максимальная глубина, возврат 0
+
+    if (isMaximizing)
+    {
+        float bestScore = -std::numeric_limits<float>::max();
+        std::pair<int, int> bestMove = {-1, -1};
+
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (field[i][j] == '-')
+                {
+                    field[i][j] = simbol;                                          // Сделать ход
+                    float score = minimax(field, simbol, depth - 1, false).second; // Вызов рекурсии
+                    field[i][j] = '-';                                             // Отменить ход
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestMove = {i, j}; // Сохранить лучший ход
+                    }
+                }
+            }
+        }
+        return {bestMove.first, bestScore}; // Возвращаем лучший ход и его оценку
+    }
+    else
+    {
+        float bestScore = std::numeric_limits<float>::max();
+        std::pair<int, int> bestMove = {-1, -1};
+        char opponent = flip(simbol);
+
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (field[i][j] == '-')
+                {
+                    field[i][j] = opponent;                                       // Сделать ход противника
+                    float score = minimax(field, simbol, depth - 1, true).second; // Вызов рекурсии
+                    field[i][j] = '-';                                            // Отменить ход
+
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        bestMove = {i, j}; // Сохранить лучший ход
+                    }
+                }
+            }
+        }
+        return {bestMove.first, bestScore}; // Возвращаем лучший ход и его оценку
+    }
+}
+
+std::string findBestMove(char field[FIELD_SIZE][FIELD_SIZE], char simbol)
+{
+    // Получаем лучший ход с помощью minimax
+    std::pair<int, float> bestMove = minimax(field, simbol, 3, true);
+    return indexesToCom(bestMove.first, bestMove.second); // Возврат лучшего хода
+}
+
 void test()
 {
     std::string s;
@@ -452,7 +452,7 @@ void test()
     fillCenterDistArray(centerDist, 0.5);
 
     char simbol = '0';
-    nextStepBestMinimax(field, centerDist, simbol);
+    // nextStepBestMinimax(field,  simbol);
     exit;
 }
 
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
     if (argv[1][0] == '0')
     {
         simbol = '0';
-        std::string ns = nextStepBestH(field, centerDist, simbol);
+        std::string ns = nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
 
         steps.push(ns);
         std::cout << ns << std::endl;
@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
 
         steps.push(s);
 
-        std::string ns = nextStepBestH(field, centerDist, simbol);
+        std::string ns = nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol);  //
 
         tuple<int, int> coordinates_resp = comToIndexes(ns);
         i = get<0>(coordinates_resp);
