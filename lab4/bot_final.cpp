@@ -13,19 +13,10 @@
 #include <map>
 
 using namespace std;
+using std::get;
 
 const int FIELD_SIZE = 15;
-
-void fillCenterDistArray(float array[FIELD_SIZE][FIELD_SIZE], float k)
-{
-    for (int i = 0; i < FIELD_SIZE; ++i)
-    {
-        for (int j = 0; j < FIELD_SIZE; ++j)
-        {
-            array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
-        }
-    }
-}
+const int MAX_H = 4200000;
 
 void printCharArray(char array[FIELD_SIZE][FIELD_SIZE])
 {
@@ -38,7 +29,27 @@ void printCharArray(char array[FIELD_SIZE][FIELD_SIZE])
         std::cout << std::endl; // Переход на новую строку
     }
 }
-
+void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
+{
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        for (int j = 0; j < FIELD_SIZE; ++j)
+        {
+            cout << fixed << setprecision(2) << array[i][j] << ' ';
+        }
+        cout << endl;
+    }
+}
+void fillCenterDistArray(float array[FIELD_SIZE][FIELD_SIZE], float k)
+{
+    for (int i = 0; i < FIELD_SIZE; ++i)
+    {
+        for (int j = 0; j < FIELD_SIZE; ++j)
+        {
+            array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
+        }
+    }
+}
 void resetField(char (&field)[FIELD_SIZE][FIELD_SIZE])
 {
     for (int i = 0; i < FIELD_SIZE; ++i)
@@ -91,13 +102,12 @@ float processLine(const std::vector<std::pair<int, int>> &line, const char field
         {
             collected_detail_dist += 1;
             h_local += (1 * collected_detail_dist * collected_detail_dist * collected_detail_dist);
-            // array[i][j] = (((7.0 - abs(8 - (i + 1))) / 7.0 + (7.0 - abs(8 - (j + 1))) / 7.0)) * k;
-            // h_local += centerDist[f][s];
+            // Близость к центру
             h_local += (((7.0 - abs(8 - (f + 1))) / 7.0 + (7.0 - abs(8 - (s + 1))) / 7.0)) * k;
             len += 1;
             if (collected_detail_dist >= target_len)
             {
-                return 420000; // std::numeric_limits<float>::max();
+                return MAX_H; // std::numeric_limits<float>::max();
             }
         }
         else
@@ -231,17 +241,207 @@ std::string nextStepBestH(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol)
     }
     return indexesToCom(best_i, best_j);
 }
-
-void printFloatArray(float array[FIELD_SIZE][FIELD_SIZE])
+bool isGameOver(const char field[FIELD_SIZE][FIELD_SIZE], int target_len = 5)
 {
-    for (int i = 0; i < FIELD_SIZE; ++i)
+    // Символы для проверки
+    char symbols[] = {'0', '1'};
+
+    // Проходим по каждому символу
+    for (char simbol : symbols)
     {
+        // Проверка горизонтальных линий
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            int count = 0;
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (field[i][j] == simbol)
+                {
+                    count++;
+                    if (count == target_len)
+                        return true;
+                }
+                else
+                {
+                    count = 0;
+                }
+            }
+        }
+
+        // Проверка вертикальных линий
         for (int j = 0; j < FIELD_SIZE; ++j)
         {
-            cout << fixed << setprecision(2) << array[i][j] << ' ';
+            int count = 0;
+            for (int i = 0; i < FIELD_SIZE; ++i)
+            {
+                if (field[i][j] == simbol)
+                {
+                    count++;
+                    if (count == target_len)
+                        return true;
+                }
+                else
+                {
+                    count = 0;
+                }
+            }
         }
-        cout << endl;
+
+        // Проверка главных диагоналей (↘)
+        for (int start = 0; start <= FIELD_SIZE - target_len; ++start)
+        {
+            int count_main_diag = 0;
+            int count_secondary_diag = 0;
+            for (int offset = 0; start + offset < FIELD_SIZE; ++offset)
+            {
+                if (field[start + offset][offset] == simbol)
+                {
+                    count_main_diag++;
+                    if (count_main_diag == target_len)
+                        return true;
+                }
+                else
+                {
+                    count_main_diag = 0;
+                }
+
+                if (field[offset][start + offset] == simbol)
+                {
+                    count_secondary_diag++;
+                    if (count_secondary_diag == target_len)
+                        return true;
+                }
+                else
+                {
+                    count_secondary_diag = 0;
+                }
+            }
+        }
+
+        // Проверка побочных диагоналей (↙)
+        for (int start = target_len - 1; start < FIELD_SIZE; ++start)
+        {
+            int count_main_diag = 0;
+            int count_secondary_diag = 0;
+            for (int offset = 0; start - offset >= 0 && offset < FIELD_SIZE; ++offset)
+            {
+                if (field[start - offset][offset] == simbol)
+                {
+                    count_main_diag++;
+                    if (count_main_diag == target_len)
+                        return true;
+                }
+                else
+                {
+                    count_main_diag = 0;
+                }
+
+                if (field[FIELD_SIZE - 1 - offset][start - offset] == simbol)
+                {
+                    count_secondary_diag++;
+                    if (count_secondary_diag == target_len)
+                        return true;
+                }
+                else
+                {
+                    count_secondary_diag = 0;
+                }
+            }
+        }
     }
+
+    return false;
+}
+
+std::tuple<int, int, float> minimax(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol, char start_simbol, int depth, float a, float b, int row, int col, bool isMaxim)
+{
+    if (depth <= 0 || isGameOver(field)) // || a >= MAX_H || b >= MAX_H - надо добавить конец игры
+    {
+        float total_h = totalHeuristic(field, start_simbol);
+        return std::make_tuple(row, col, total_h);
+    }
+
+    if (isMaxim)
+    {
+
+        float best_score = -std::numeric_limits<float>::max();
+        // best_row and best_col - не нужны
+        int best_row = -1;
+        int best_col = -1;
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (field[i][j] == '-')
+                {
+                    field[i][j] = simbol;
+                    float score = std::get<2>(minimax(field, flip(simbol), start_simbol, depth - 1, a, b, i, j, false)); // hForOneEll(field, i, j, simbol); //
+                    field[i][j] = '-';
+                    if (score > best_score)
+                    {
+                        best_score = score;
+                        best_row = i;
+                        best_col = j;
+                    }
+                    a = std::max(a, best_score);
+                    if (b <= a)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return std::make_tuple(best_row, best_col, best_score);
+    }
+    else
+    {
+        float best_score = std::numeric_limits<float>::max();
+        int best_row = -1;
+        int best_col = -1;
+
+        for (int i = 0; i < FIELD_SIZE; ++i)
+        {
+            for (int j = 0; j < FIELD_SIZE; ++j)
+            {
+                if (field[i][j] == '-')
+                {
+                    field[i][j] = simbol;
+                    float score = std::get<2>(minimax(field, flip(simbol), start_simbol, depth - 1, a, b, i, j, true)); // hForOneEll(field, i, j, simbol); //
+                    field[i][j] = '-';
+                    if (score < best_score)
+                    {
+                        best_score = score;
+                        best_row = i;
+                        best_col = j;
+                    }
+                    b = std::min(b, best_score);
+                    if (b <= a)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return std::make_tuple(best_row, best_col, best_score);
+    }
+}
+
+std::string nextStepMinimax(char (&field)[FIELD_SIZE][FIELD_SIZE], char simbol)
+{
+    int best_i = 0;
+    int best_j = 0;
+    int depth = 2;
+    float a = -std::numeric_limits<float>::max();
+    float b = std::numeric_limits<float>::max();
+    char start_simbol = simbol;
+
+    auto res = minimax(field, simbol, start_simbol, depth, a, b, -1, -1, true);
+    best_i = std::get<0>(res);
+    best_j = std::get<1>(res);
+
+    return indexesToCom(best_i, best_j);
 }
 
 void test()
@@ -262,7 +462,7 @@ void test()
 
 int main(int argc, char *argv[])
 {
-    test();
+    // test();
     std::string s;
 
     float centerDist[FIELD_SIZE][FIELD_SIZE];
@@ -280,7 +480,7 @@ int main(int argc, char *argv[])
     if (argv[1][0] == '0')
     {
         simbol = '0';
-        std::string ns = nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
+        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
 
         steps.push(ns);
         std::cout << ns << std::endl;
@@ -331,7 +531,7 @@ int main(int argc, char *argv[])
 
         steps.push(s);
 
-        std::string ns = nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol);  //
+        std::string ns = nextStepMinimax(field, simbol); // nextStepBestH(field, simbol); // findBestMove(field, centerDist, simbol); //
 
         tuple<int, int> coordinates_resp = comToIndexes(ns);
         i = get<0>(coordinates_resp);
