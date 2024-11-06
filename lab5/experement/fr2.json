@@ -1,0 +1,32 @@
+{
+    "facts": [
+        "A",
+        "B",
+        "D",
+        "E",
+        "F"
+    ],
+    "rules": [
+        {
+            "conditions": [
+                "A",
+                "B"
+            ],
+            "result": "C"
+        },
+        {
+            "conditions": [
+                "C",
+                "E"
+            ],
+            "result": "F"
+        },
+        {
+            "conditions": [
+                "F",
+                "A"
+            ],
+            "result": "B"
+        }
+    ]
+}
