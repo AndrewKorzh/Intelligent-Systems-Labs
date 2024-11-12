@@ -115,9 +115,8 @@ def find_path_to_target_facts_forward(
     nodes = [node]
     index = 0
     found = False
-
-    # Main search loop
     while index < len(nodes) and not found:
+        print(nodes[index])
         new_rules = nodes[index].rules_that_gives_new_facts_forward(rules=rules)
         for rule in new_rules:
             facts = copy.deepcopy(nodes[index].facts)
@@ -127,54 +126,7 @@ def find_path_to_target_facts_forward(
                 facts.add(new_fact)
                 nodes.append(Node(facts=facts, rule=rule, parent_index=index))
 
-                # Check if all target facts are found
                 if target_facts.issubset(facts):
-                    found = True
-                    break
-        index += 1
-
-    # Trace back the path if found
-    if found:
-        path = []
-        node = nodes[-1]
-
-        while node.parent_index != -1:
-            path.append(node)
-            node = nodes[node.parent_index]
-
-        path.append(node)  # Add the initial node facts
-        path.reverse()
-
-        return path
-    else:
-        return None
-
-
-def find_path_to_target_facts_backward(
-    rules: Rules, start_facts: list[str], target_facts: set[str]
-):
-    node = Node(facts=target_facts, rule=None, parent_index=-1)
-    nodes = [node]
-    index = 0
-    found = False
-    start_facts = set(start_facts)
-
-    while index < len(nodes) and not found:
-        new_rules = nodes[index].rules_that_gives_new_facts_backward(rules=rules)
-        # print(new_rules)
-        for rule in new_rules:
-            facts = copy.deepcopy(nodes[index].facts)
-            premises = rules.get_premises_by_rule(rule)
-            # print(premises)
-
-            facts_are_collected = all(f in facts for f in premises)
-            if not facts_are_collected:
-                for premise in premises:
-                    facts.add(premise)
-
-                nodes.append(Node(facts=facts, rule=rule, parent_index=index))
-
-                if start_facts.issubset(facts):
                     found = True
                     break
         index += 1
@@ -188,6 +140,46 @@ def find_path_to_target_facts_backward(
             node = nodes[node.parent_index]
 
         path.append(node)
+        path.reverse()
+
+        return path
+    else:
+        return None
+
+
+def find_path_to_target_facts_backward(
+    rules: Rules, start_facts: list[str], target_facts: set[str]
+):
+    nodes = [Node(facts=target_facts, rule=None, parent_index=-1)]
+    index = 0
+    found = False
+    while index < len(nodes) and not found:
+        print(nodes[index])
+        # Получаем правила, которые могут привести к новым фактам в текущем узле
+        new_rules = nodes[index].rules_that_gives_new_facts_backward(rules=rules)
+
+        for rule in new_rules:
+            # Получаем посылки правила и создаём новый узел с этими посылками
+            premises = set(rules.get_premises_by_rule(rule))
+            all_premises_in_facts = premises.issubset(set(start_facts))
+            nodes.append(Node(facts=premises, rule=rule, parent_index=index))
+
+            # Проверяем, что все начальные факты покрывают посылки (начальные условия выполнены)
+            if all_premises_in_facts:
+                found = True
+                break
+        index += 1
+
+    if found:
+        path = []
+        node = nodes[-1]
+
+        while node.parent_index != -1:
+            path.append(node)
+            node = nodes[node.parent_index]
+
+        path.append(node)
+        path.reverse()
 
         return path
     else:
@@ -196,15 +188,12 @@ def find_path_to_target_facts_backward(
 
 def print_path(path):
     if path:
-        print("Path to reach target facts:")
         for step in path:
             if step.rule:
                 print(f"- {step.rule} -> {step.facts}", end=" ")
             else:
                 print(f"{step.facts}", end=" ")
         print()
-    else:
-        print("Target facts could not be reached.")
 
 
 def print_rules(path, rules: Rules):
@@ -212,31 +201,41 @@ def print_rules(path, rules: Rules):
         for step in path:
             if step.rule:
                 print(rules.get_rule_by_id(step.rule))
-    else:
-        print("Target facts could not be reached.")
 
 
 def print_by_text(path, rules: Rules, facts: Facts, start_facts, target_facts):
-    start_facts_str = " и ".join([facts.get_text_by_id(f) for f in start_facts])
-    target_facts_str = " и ".join([facts.get_text_by_id(f) for f in target_facts])
+    start_facts_str = " + ".join([facts.get_text_by_id(f) for f in start_facts])
+    target_facts_str = " + ".join([facts.get_text_by_id(f) for f in target_facts])
     print(f"\n{start_facts_str} -> {target_facts_str}\n")
 
     if path:
         for step in path:
             if step.rule:
                 rule_obj = rules.get_rule_by_id(step.rule)
-                facts_str = " и ".join(
+                facts_str = " + ".join(
                     [facts.get_text_by_id(p) for p in rule_obj.premises]
                 )
-                print(
-                    f"Если {facts_str} - > {facts.get_text_by_id(rule_obj.conclusion)}"
-                )
-
-    else:
-        print("Target facts could not be reached.")
+                print(f"{facts_str} - > {facts.get_text_by_id(rule_obj.conclusion)}")
 
 
-file_path = "illnes.json"
+# file_path = "illnes.json"
+
+# start_facts = ["f2", "f6"]
+# target_facts = {"f3"}
+
+file_path = "music.json"
+
+# # Kanye West
+# start_facts = ["f3", "f6", "f8"]
+# target_facts = {"f5"}
+
+# Hillsong
+start_facts = ["f24", "f11"]
+target_facts = {"f22"}
+
+# file_path = "generated_data.json"
+# start_facts = ["f2", "f6"]
+# target_facts = {"f10"}
 
 facts = Facts()
 facts.load(file_path)
@@ -244,10 +243,7 @@ facts.load(file_path)
 rules = Rules()
 rules.load(file_path=file_path)
 
-
-start_facts = ["f2", "f6"]
-target_facts = {"f3"}
-
+print("\n---Прямой поиск---\n")
 path = find_path_to_target_facts_forward(rules, start_facts, target_facts)
 
 print_path(path=path)
@@ -261,9 +257,8 @@ print_by_text(
 )
 
 
-path = find_path_to_target_facts_backward(rules, start_facts, target_facts)
-
-print_rules(path=path, rules=rules)
+# print_path(path=path)
+# print_rules(path=path, rules=rules)
 print_by_text(
     path=path,
     rules=rules,
@@ -271,13 +266,15 @@ print_by_text(
     start_facts=start_facts,
     target_facts=target_facts,
 )
-path.reverse()
-print_path(path=path)
 
-# # print_path(path=path)
-# # print_rules(path=path, rules=rules)
+
+# print("\n---Обратный поиск---\n")
+# backward_path = find_path_to_target_facts_backward(rules, start_facts, target_facts)
+
+# print_path(path=backward_path)
+# print_rules(path=backward_path, rules=rules)
 # print_by_text(
-#     path=path,
+#     path=backward_path,
 #     rules=rules,
 #     facts=facts,
 #     start_facts=start_facts,

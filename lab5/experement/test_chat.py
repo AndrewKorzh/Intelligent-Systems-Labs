@@ -54,7 +54,7 @@ def load_data_from_json(file_path):
 
 
 # Путь к вашему JSON-файлу
-json_file_path = "fr2.json"  # Укажите имя вашего файла
+json_file_path = "illnes.json"  # Укажите имя вашего файла
 
 # Загрузка фактов и правил
 facts, rules = load_data_from_json(json_file_path)
