@@ -57,11 +57,15 @@ class Rule:
 class Rules:
     def __init__(self):
         self.rules: Dict[str, Rule] = {}
-        self.rules_backward: Dict[str, Rule] = {}
+        # Тупанул - должен быть список правил
+        self.rules_backward: Dict[str, list[Rule]] = {}
 
     def add(self, rule: Rule):
         self.rules[rule.id] = rule
-        self.rules_backward[rule.conclusion] = rule
+        if rule.conclusion in self.rules_backward:
+            self.rules_backward[rule.conclusion].append(rule)
+        else:
+            self.rules_backward[rule.conclusion] = [rule]
 
     def get_fact_by_rule(self, id: str):
         return self.rules[id].conclusion
@@ -83,6 +87,14 @@ class Rules:
 
 
 class NodeBackward:
+    """
+    # Статус факта, индекс ребёнка, rule_id
+    facts: dict[str:[Status, int, str]],
+    # parent_indx, fact_id
+    parent_info: list[int, str],
+
+    """
+
     def __init__(
         self,
         # Статус факта, индекс ребёнка, rule_id
@@ -127,6 +139,18 @@ class ProductionSystem:
         self.rules = Rules()
         self.rules.load(path_rules_and_facts)
 
+    def collect_facts_to_root(self, nodes: list[NodeBackward], index) -> set:
+        facts_set = set()
+        while True:
+            if index == -1:
+                break
+            for fact in nodes[index].facts.keys():
+                facts_set.add(fact)
+            index = nodes[index].parent_info[0]
+
+        print("facts_set: ", facts_set)
+        return facts_set
+
     def backward(
         self,
         start_facts: set[str],
@@ -144,36 +168,96 @@ class ProductionSystem:
         index = 0
         found = False
 
-        while index < len(nodes) and not found:
+        while index < len(nodes):
+            print("index: ", index, "nodes: ", len(nodes))
+            # if len(nodes) > 1000:
+            #     break
+            # print(f"    {index}    ")
+            # print(nodes[index])
             facts = list(nodes[index].facts.keys())
             for fact in facts:
                 if fact in start_facts:
                     nodes[index].facts[fact][0] = Status.PROVED
 
+            parent_index = nodes[index].parent_info[0]
             status = nodes[index].check_status()
             if status == Status.PROVED:
-                if nodes[index].parent_info[0] == -1:
+                if parent_index == -1:
                     found = True
                     break
+                # Если доказали узел - то родительский факт - доказан
+                nodes[parent_index].facts[nodes[index].parent_info[1]][
+                    0
+                ] = Status.PROVED
+                # index = parent_index
+                # continue
+
+            if status == Status.BLOCKED:
+                if parent_index == -1:
+                    break
+                # Тут блокируем факт родительский из которого пришли
+                nodes[parent_index].facts[nodes[index].parent_info[1]][
+                    0
+                ] = Status.BLOCKED
+            # Ну, получается есть куда идти)
+            # Пока что без цклов
+
+            new_facts_list = []
+            for fact_id, fact in nodes[index].facts.items():
+                print(fact_id, "-", fact[0], "-------")
+                if fact[0] == Status.UNKNOWN:
+                    if fact_id in self.rules.rules_backward:
+                        rules_whith_potential_new_facts = self.rules.rules_backward[
+                            fact_id
+                        ]
+                        for rule in rules_whith_potential_new_facts:
+                            potential_new_facts = set(rule.premises)
+                            collected = self.collect_facts_to_root(
+                                nodes=nodes, index=index
+                            )
+                            # print("collected: ", collected)
+                            if not potential_new_facts.issubset(collected):
+                                # print("potential_new_facts", potential_new_facts)
+                                new_facts_list.append(
+                                    (potential_new_facts, rule.id, fact_id)
+                                )
+
+            # print("new_facts_list", new_facts_list)
+            if len(new_facts_list) == 0:
+                for fact in facts:
+                    if fact in start_facts:
+                        if fact not in start_facts:
+                            nodes[index].facts[fact][0] = Status.BLOCKED
+
+            for new_facts in new_facts_list:
+                facts, rule_id, fact_id = new_facts
+                f_node = {}
+                for fact in facts:
+                    f_node[fact] = [Status.UNKNOWN, index, rule_id]
+
+                nodes.append(NodeBackward(facts=f_node, parent_info=[index, fact_id]))
 
             index += 1
 
-        for n in nodes:
-            print(n)
         if found == True:
             print("Found!")
             return nodes
 
         print("Not found!")
-        return None
+        return nodes
 
 
-file_path = "rules.json"
+file_path = "music-20.json"
 
 
 ps = ProductionSystem(file_path)
 
-ps.backward({"f1", "f2", "f3", "f4", "f5"}, {"f3", "f4", "f5"})
+nodes = ps.backward(start_facts={"f1", "f2"}, target_facts={"f39"})
+
+
+for index, node in enumerate(nodes):
+    print(index)
+    print(node)
 
 
 # rules_backwardm = ps.rules.rules_backward

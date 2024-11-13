@@ -339,7 +339,7 @@ class ProductionSystemInterface:
         self.root.mainloop()
 
 
-file_path = "music-50.json"
+file_path = "music-20.json"
 
 with open(file_path, "r", encoding="utf-8") as file:
     rules_dict = json.load(file)
