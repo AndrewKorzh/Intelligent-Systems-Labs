@@ -74,9 +74,9 @@ def form_facts_and_rules_dict(df):
     return result
 
 
-path_to_csv = "music-50.csv"
+path_to_csv = ".//source_csv//music-20.csv"
 path_to_formated_csv = "rules.csv"
-path_to_json = "music-50.json"
+path_to_json = ".//rules_and_facts//music-20.json"
 
 excel_format_to_normal(path_to_csv, path_to_formated_csv)
 

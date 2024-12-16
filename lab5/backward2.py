@@ -167,7 +167,13 @@ class ProductionSystem:
         current_index = 0
         proved = False
 
+        count = 0
+
         while current_index < len(nodes):
+            count += 1
+            # if count >= 100:
+            #     return
+            print(current_index)
             current_node = nodes[current_index]
             # Проверка фактов на начальные
             for fact_id in current_node.facts.keys():
@@ -187,6 +193,7 @@ class ProductionSystem:
                 continue
 
             if current_node_status == Status.BLOCKED:
+                print("\n\nblocked\n\n")
                 if current_node.parent_index == -1:
                     break
                 parent_fact = current_node.parent_fact_id
@@ -205,6 +212,7 @@ class ProductionSystem:
                             new_facts = set(rule.premises)
                             collected = self.collect_facts_to_root(nodes, current_index)
                             if not new_facts.issubset(collected):
+                                print("append")
                                 fact_id_and_rule_id.append((fact_id, rule.id))
 
             if len(fact_id_and_rule_id) == 0:
@@ -228,7 +236,7 @@ class ProductionSystem:
         return nodes
 
 
-file_path = "music-20.json"
+file_path = "music-50.json"
 
 ps = ProductionSystem(file_path)
 

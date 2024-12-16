@@ -53,6 +53,9 @@ class Rules:
     def get_rule_by_id(self, id: str):
         return self.rules[id]
 
+    def get_rules_by_fact(self, id):
+        return
+
     def load(self, file_path):
         with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -339,7 +342,7 @@ class ProductionSystemInterface:
         self.root.mainloop()
 
 
-file_path = "music-20.json"
+file_path = ".//rules_and_facts//music-20.json"
 
 with open(file_path, "r", encoding="utf-8") as file:
     rules_dict = json.load(file)
