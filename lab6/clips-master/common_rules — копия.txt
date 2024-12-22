@@ -1,0 +1,60 @@
+;========================================================================
+
+
+(deftemplate ioproxy  ; шаблон факта-посредника для обмена информацией с GUI
+	(slot fact-id)        ; теоретически тут id факта для изменения
+	(multislot answers)   ; возможные ответы
+	(multislot messages)  ; исходящие сообщения
+	(slot reaction)       ; возможные ответы пользователя
+	(slot value)          ; выбор пользователя
+	(slot restore)        ; зарезервированное поле
+)
+
+; Собственно экземпляр факта ioproxy
+(deffacts proxy-fact
+	(ioproxy
+		(fact-id 0112) ; это поле пока что не задействовано
+		(value none)   ; значение пустое
+		(messages)     ; мультислот messages изначально пуст
+	)
+)
+
+(defrule clear-messages
+	(declare (salience 90))
+	?clear-msg-flg <- (clearmessage)
+	?proxy <- (ioproxy)
+=>
+	(modify ?proxy (messages))
+	(retract ?clear-msg-flg)
+	(printout t "Messages cleared ..." crlf)	
+)
+
+(defrule set-output-and-halt
+	(declare (salience 99))
+	?current-message <- (sendmessagehalt $?new-msg)
+	?proxy <- (ioproxy (messages $?msg-list))
+=>
+	(modify ?proxy (messages ?new-msg))
+	(retract ?current-message)
+	(halt)
+)
+
+(deftemplate fact ; шаблон факта
+	(slot name) ; имя факта
+)
+
+(deftemplate add-fact ; шаблон факта-посредника для добавления фактов
+	(slot name) ; имя факта
+)	
+
+(defrule set-fact-and-halt ; добавление факта через GUI
+	(declare (salience 98))
+	?proxy <- (add-fact (name ?fact))
+=>
+	(assert (fact (name ?fact)))
+	(retract ?proxy)
+	(assert (sendmessagehalt "Добавлен факт:" ?fact))
+	(halt)
+)
+
+;======================================================================================

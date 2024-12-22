@@ -1,60 +1,63 @@
 ;========================================================================
-
-
-(deftemplate ioproxy  ; шаблон факта-посредника для обмена информацией с GUI
-	(slot fact-id)        ; теоретически тут id факта для изменения
-	(multislot answers)   ; возможные ответы
-	(multislot messages)  ; исходящие сообщения
-	(slot reaction)       ; возможные ответы пользователя
-	(slot value)          ; выбор пользователя
-	(slot restore)        ; зарезервированное поле
+; Шаблон ioproxy - посредник для взаимодействия с пользовательским интерфейсом (GUI)
+(deftemplate ioproxy  
+	(slot fact-id)        ; идентификатор факта, используется для изменения
+	(multislot answers)   ; возможные ответы пользователя
+	(multislot messages)  ; сообщения, отправляемые пользователю
+	(slot reaction)       ; реакция пользователя (ожидаемое действие)
+	(slot value)          ; выбор пользователя, значение по умолчанию - none
+	(slot restore)        ; зарезервированное поле для дополнительной информации
 )
 
-; Собственно экземпляр факта ioproxy
+; Экземпляр факта ioproxy - начальное состояние системы
 (deffacts proxy-fact
 	(ioproxy
-		(fact-id 0112) ; это поле пока что не задействовано
-		(value none)   ; значение пустое
-		(messages)     ; мультислот messages изначально пуст
+		(fact-id 0112) ; идентификатор факта (пока не используется)
+		(value none)   ; начальное значение (none)
+		(messages)     ; пустой список сообщений
 	)
 )
 
+; Правило clear-messages - очистка сообщений в ioproxy
 (defrule clear-messages
-	(declare (salience 90))
-	?clear-msg-flg <- (clearmessage)
-	?proxy <- (ioproxy)
+	(declare (salience 90)) ; приоритет выполнения правила (90)
+	?clear-msg-flg <- (clearmessage) ; факт-триггер для очистки сообщений
+	?proxy <- (ioproxy)              ; извлечение текущего факта ioproxy
 =>
-	(modify ?proxy (messages))
-	(retract ?clear-msg-flg)
-	(printout t "Messages cleared ..." crlf)	
+	(modify ?proxy (messages))       ; очистка списка сообщений
+	(retract ?clear-msg-flg)         ; удаление факта-триггера clearmessage
+	(printout t "Messages cleared ..." crlf) ; вывод сообщения в консоль
 )
 
+; Правило set-output-and-halt - установка нового сообщения и завершение работы системы
 (defrule set-output-and-halt
-	(declare (salience 99))
-	?current-message <- (sendmessagehalt $?new-msg)
-	?proxy <- (ioproxy (messages $?msg-list))
+	(declare (salience 99)) ; приоритет выполнения правила (99)
+	?current-message <- (sendmessagehalt $?new-msg) ; факт с новыми сообщениями
+	?proxy <- (ioproxy (messages $?msg-list))       ; текущий факт ioproxy
 =>
-	(modify ?proxy (messages ?new-msg))
-	(retract ?current-message)
-	(halt)
+	(modify ?proxy (messages ?new-msg))            ; обновление сообщений в ioproxy
+	(retract ?current-message)                     ; удаление факта sendmessagehalt
+	(halt)                                         ; завершение работы системы
 )
 
-(deftemplate fact ; шаблон факта
+; Шаблон fact - описание факта с именем
+(deftemplate fact 
 	(slot name) ; имя факта
 )
 
-(deftemplate add-fact ; шаблон факта-посредника для добавления фактов
-	(slot name) ; имя факта
+; Шаблон add-fact - посредник для добавления новых фактов
+(deftemplate add-fact 
+	(slot name) ; имя факта для добавления
 )	
 
-(defrule set-fact-and-halt ; добавление факта через GUI
-	(declare (salience 98))
-	?proxy <- (add-fact (name ?fact))
+; Правило set-fact-and-halt - добавление нового факта через GUI и завершение работы системы
+(defrule set-fact-and-halt 
+	(declare (salience 98)) ; приоритет выполнения правила (98)
+	?proxy <- (add-fact (name ?fact)) ; факт с именем нового добавляемого факта
 =>
-	(assert (fact (name ?fact)))
-	(retract ?proxy)
-	(assert (sendmessagehalt "Добавлен факт:" ?fact))
-	(halt)
+	(assert (fact (name ?fact)))                      ; добавление нового факта в базу знаний
+	(retract ?proxy)                                 ; удаление факта add-fact
+	(assert (sendmessagehalt "Добавлен факт:" ?fact)) ; отправка сообщения об успешном добавлении
+	(halt)                                           ; завершение работы системы
 )
-
 ;======================================================================================

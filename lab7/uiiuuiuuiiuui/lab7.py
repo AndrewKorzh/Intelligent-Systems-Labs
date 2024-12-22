@@ -2,6 +2,7 @@ import tkinter as tk
 import json
 import copy
 import hashlib
+import random
 
 
 # Todo
@@ -27,14 +28,17 @@ class Fact:
 
 
 class Rule:
-    def __init__(self, id: str, premises: list[str], conclusion):
+    def __init__(self, id: str, premises: list[str], conclusion, confidence=None):
         self.id = id
         self.premises = premises
         self.conclusion = conclusion
-        self.confidence = 0.9
+        if not confidence:
+            self.confidence = random.uniform(0.98, 1.0)
+        else:
+            self.confidence = confidence
 
     def str_rule_and_conf(self):
-        return f"{self.id} [{(self.confidence)}]"
+        return f"{self.id} [{(self.confidence):.2f}]"
 
     def __str__(self):
         premises_str = ", ".join([str(p) for p in self.premises])
@@ -106,7 +110,7 @@ class Node:
         else:
             self.confidence_dict = {}
             for fact in self.facts:
-                self.confidence_dict[fact] = 1.0
+                self.confidence_dict[fact] = random.uniform(0.9, 1.0)  # 1.0
 
     def __str__(self):
         facts_str = ", ".join(
@@ -125,8 +129,6 @@ class Node:
                 for fact in r.premises:
                     confid *= self.confidence_dict[fact]
                 confid *= r.confidence
-                print(confid)
-
                 rules_for_new_nodes_id[r.id] = confid
 
         return rules_for_new_nodes_id

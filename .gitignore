@@ -7,3 +7,8 @@
 *.json
 
 .vs/
+
+bin/
+
+Lib/
+obj/
