@@ -1,0 +1,104 @@
+;========================================================================
+; Этот блок реализует логику обмена информацией с графической оболочкой,
+; а также механизм остановки и повторного пуска машины вывода
+; Русский текст в комментариях разрешён!
+
+(deftemplate ioproxy  ; шаблон факта-посредника для обмена информацией с GUI
+	(slot fact-id)        ; теоретически тут id факта для изменения
+	(multislot answers)   ; возможные ответы
+	(multislot messages)  ; исходящие сообщения
+	(slot reaction)       ; возможные ответы пользователя
+	(slot value)          ; выбор пользователя
+	(slot restore)        ; забыл зачем это поле
+)
+
+; Собственно экземпляр факта ioproxy
+(deffacts proxy-fact
+	(ioproxy
+		(fact-id 0112) ; это поле пока что не задействовано
+		(value none)   ; значение пустое
+		(messages)     ; мультислот messages изначально пуст
+	)
+)
+
+(defrule clear-messages
+	(declare (salience 90))
+	?clear-msg-flg <- (clearmessage)
+	?proxy <- (ioproxy)
+	=>
+	(modify ?proxy (messages))
+	(retract ?clear-msg-flg)
+	(printout t "Messages cleared ..." crlf)	
+)
+
+(defrule set-output-and-halt
+	(declare (salience 99))
+	?current-message <- (sendmessagehalt $?new-msg)
+	?proxy <- (ioproxy (messages $?msg-list))
+	=>
+	(modify ?proxy (messages ?new-msg))
+	(retract ?current-message)
+	(halt)
+)
+
+(deftemplate fact_with_confidence
+	(slot fact)
+	(slot confidence (type NUMBER))
+)
+
+
+(deftemplate add-fact ;шаблон факта-посредника для выбора типа проекта
+	(slot fact)
+	(slot confidence (type NUMBER))
+)	
+
+(deffunction combine-cf (?cf1 ?cf2)
+    (if (and (> ?cf1 0) (> ?cf2 0))
+        then
+            (return (- (+ ?cf1 ?cf2) (* ?cf1 ?cf2)))
+        else
+        (if (and (< ?cf1 0) (< ?cf2 0))
+            then
+                (return (+ (+ ?cf1 ?cf2) (* ?cf1 ?cf2)))
+            else
+                (return (/ (+ ?cf1 ?cf2) (- 1 (min (abs ?cf1) (abs ?cf2)))))
+	)
+    )
+)
+
+(defrule add_confidence
+	(declare (salience 20))
+	?f1 <- (fact_with_confidence (fact ?fact) (confidence ?cf1))
+	?f2 <- (fact_with_confidence (fact ?fact) (confidence ?cf2))
+	(test (neq ?f1 ?f2))
+	=>
+	(bind ?new-cf (min ?cf1 ?cf2))
+	(retract ?f1)
+	(retract ?f2)
+	(assert (fact_with_confidence (fact ?fact) (confidence ?new-cf)))
+	(assert (sendmessagehalt "Встречен повтор факта:" ?fact "Проведена комбинация, результат: " (str-cat ?new-cf)))
+)
+
+(defrule set-fact-and-halt
+	(declare (salience 98))
+	?proxy <- (add-fact (fact ?fact) (confidence ?confidence))
+	=>
+	(assert (fact_with_confidence (fact ?fact) (confidence ?confidence)))
+	(retract ?proxy)
+	(assert (sendmessagehalt "Добавлен факт:" ?fact  (str-cat ?confidence)))
+	(halt)
+)
+
+;(defrule append-output-and-halt
+;	//  Аналогичен предыдущему, но с добавлением сообщения, а не с заменой
+;)
+
+;(defrule set-output-and-proceed
+;	//  Аналогичен предыдущему, но с установкой сообщения и продолжением работы (извлекая факт с текущим сообщением)
+;)
+
+;(defrule append-output-and-proceed
+;	//  По аналогии
+;)
+
+;======================================================================================

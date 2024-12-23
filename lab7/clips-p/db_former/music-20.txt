@@ -37,6 +37,10 @@ F35: Queen
 F36: Дорога Далеко
 F37: Ed Sheeran
 F38: Jacob Collier
+F39: DS
+F40: ROCK
+F41: ELECTRIC
+F42: R&B
 
 
 
@@ -81,3 +85,5 @@ F28,F16=F36;1.0;
 F22,F19=F37;0.8;
 F16,F9=F38;0.9;
 F16,F25,F22=F38;0.8;
+F40,F41=F39;0.6;
+F42,F41=F39;0.7;
