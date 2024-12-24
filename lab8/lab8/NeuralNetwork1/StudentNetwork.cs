@@ -17,14 +17,19 @@ namespace NeuralNetwork1
 
         public StudentNetwork(int[] structure)
         {
+            
             this.structure = structure;
             neurons = new double[structure.Length][];
             weights = new double[structure.Length - 1][][];
             biases = new double[structure.Length - 1][];
             random = new Random();
 
-            for (int i = 0; i < structure.Length; i++)
+            for (int i = 0; i < structure.Length; i++) {
+                Console.WriteLine(structure[i]);
                 neurons[i] = new double[structure[i]];
+                Console.WriteLine(neurons[i].Length);
+            }
+
 
             for (int i = 0; i < structure.Length - 1; i++)
             {
@@ -49,6 +54,7 @@ namespace NeuralNetwork1
             double error;
             int iters = 0;
 
+            Console.WriteLine(sample);
             do
             {
                 error = TrainSample(sample.input, sample.Output);

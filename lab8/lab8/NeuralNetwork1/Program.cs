@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace NeuralNetwork1
 {
     static class Program
@@ -14,6 +15,7 @@ namespace NeuralNetwork1
         [STAThread]
         static void Main()
         {
+           
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new NeuralNetworksStand(new Dictionary<string, Func<int[], BaseNetwork>>
@@ -21,7 +23,7 @@ namespace NeuralNetwork1
                 // Тут можно добавить свои нейросети
                 {"Accord.Net Perseptron", structure => new AccordNet(structure)},
                 {"Студентческий персептрон", structure => new StudentNetwork(structure)},
-                {"Студентческий персептрон2", structure => new EnhancedNetwork(structure)},
+                {"Плохой персептрон", structure => new EnhancedNetwork(structure)},
             }));
         }
     }
