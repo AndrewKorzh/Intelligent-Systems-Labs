@@ -72,7 +72,7 @@ namespace NeuralNetwork1
 
             label1.Text = "Распознано : " + figure.recognizedClass;
 
-            label8.Text = string.Join("\n", figure.Output.Select(d => d.ToString(CultureInfo.InvariantCulture)));
+            label8.Text = string.Join("\n", figure.Output.Select(d => d.ToString("F2", CultureInfo.InvariantCulture)));
             pictureBox1.Image = generator.GenBitmap();
             pictureBox1.Invalidate();
         }
