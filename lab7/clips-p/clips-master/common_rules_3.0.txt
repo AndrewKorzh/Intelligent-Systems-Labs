@@ -53,26 +53,33 @@
 )	
 
 (deffunction combine-cf (?cf1 ?cf2)
+    ; Если обе уверенности положительные
     (if (and (> ?cf1 0) (> ?cf2 0))
         then
+            ; Формула: C = C1 + C2 - C1 * C2
             (return (- (+ ?cf1 ?cf2) (* ?cf1 ?cf2)))
         else
+        ; Если обе уверенности отрицательные
         (if (and (< ?cf1 0) (< ?cf2 0))
             then
+                ; Формула: C = C1 + C2 + C1 * C2
                 (return (+ (+ ?cf1 ?cf2) (* ?cf1 ?cf2)))
             else
+                ; Если уверенности разного знака
+                ; Формула: C = (C1 + C2) / (1 - min(|C1|, |C2|))
                 (return (/ (+ ?cf1 ?cf2) (- 1 (min (abs ?cf1) (abs ?cf2)))))
 	)
     )
 )
 
+; 	//  C = C1+C2*(1-|C1|)
 (defrule add_confidence
 	(declare (salience 20))
 	?f1 <- (fact_with_confidence (fact ?fact) (confidence ?cf1))
 	?f2 <- (fact_with_confidence (fact ?fact) (confidence ?cf2))
 	(test (neq ?f1 ?f2))
 	=>
-	(bind ?new-cf (min ?cf1 ?cf2))
+	(bind ?new-cf (+ ?cf1 (* ?cf2 (- 1 (abs ?cf1)))))
 	(retract ?f1)
 	(retract ?f2)
 	(assert (fact_with_confidence (fact ?fact) (confidence ?new-cf)))
