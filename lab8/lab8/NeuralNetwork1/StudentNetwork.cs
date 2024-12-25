@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace NeuralNetwork1
@@ -11,6 +14,8 @@ namespace NeuralNetwork1
         private double[][][] weights;
         private double[][] biases;
         private double learningRate = 0.15;
+
+        private double[][] neuronsCounter;
         private Random random;
 
         public Stopwatch stopWatch = new Stopwatch();
@@ -19,6 +24,7 @@ namespace NeuralNetwork1
         {
             
             this.structure = structure;
+            neuronsCounter = new double[structure.Length][];
             neurons = new double[structure.Length][];
             weights = new double[structure.Length - 1][][];
             biases = new double[structure.Length - 1][];
@@ -27,7 +33,7 @@ namespace NeuralNetwork1
             for (int i = 0; i < structure.Length; i++) {
                 Console.WriteLine(structure[i]);
                 neurons[i] = new double[structure[i]];
-                Console.WriteLine(neurons[i].Length);
+                neuronsCounter[i] = new double[structure[i]];
             }
 
 
@@ -49,6 +55,63 @@ namespace NeuralNetwork1
             }
         }
 
+        public void SaveNetworkToFile(string filePath)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                // Сохраняем структуру сети
+                writer.WriteLine("{ \"Structure\": [");
+                writer.WriteLine($"  {string.Join(",", structure)}");
+                writer.WriteLine("],");
+
+                // Сохраняем нейроны
+                writer.WriteLine("  \"Neurons\": [");
+                for (int i = 0; i < neurons.Length; i++)
+                {
+                    writer.WriteLine($"    [{string.Join(",", neurons[i].Select(n => FormatNumber(n)).ToArray())}]");
+                    if (i < neurons.Length - 1)
+                        writer.WriteLine(",");
+                }
+                writer.WriteLine("],");
+
+                // Сохраняем веса
+                writer.WriteLine("  \"Weights\": {");
+                for (int i = 0; i < weights.Length; i++)
+                {
+                    writer.WriteLine($"    \"Layer {i}\": [");
+                    for (int j = 0; j < weights[i].Length; j++)
+                    {
+                        writer.WriteLine($"      [{string.Join(",", weights[i][j].Select(w => FormatNumber(w)).ToArray())}]");
+                        if (j < weights[i].Length - 1)
+                            writer.WriteLine(",");
+                    }
+                    writer.WriteLine("    ]");
+                    if (i < weights.Length - 1)
+                        writer.WriteLine(",");
+                }
+                writer.WriteLine("  },");
+
+                // Сохраняем смещения
+                writer.WriteLine("  \"Biases\": {");
+                for (int i = 0; i < biases.Length; i++)
+                {
+                    writer.WriteLine($"    \"Layer {i}\": [{string.Join(",", biases[i].Select(b => FormatNumber(b)).ToArray())}]");
+                    if (i < biases.Length - 1)
+                        writer.WriteLine(",");
+                }
+                writer.WriteLine("  }");
+
+                writer.WriteLine("}");
+            }
+        }
+        private string FormatNumber(double number)
+        {
+            // Если число слишком маленькое или близко к нулю, не выводить его с множеством знаков после запятой
+            if (Math.Abs(number) < 1e-10)
+                return "0"; // Возвращаем 0, если число очень маленькое
+            else
+                return number.ToString("0.##########", CultureInfo.InvariantCulture); // Форматируем с точностью до 10 знаков, используя точку
+        }
         public override int Train(Sample sample, double acceptableError, bool parallel)
         {
             double error;
@@ -64,9 +127,21 @@ namespace NeuralNetwork1
             return iters;
         }
 
+        public void ResetNeuronsCounter()
+        {
+            for (int i = 0; i < neuronsCounter.Length; i++)
+            {
+                for (int j = 0; j < neuronsCounter[i].Length; j++)
+                {
+                    neuronsCounter[i][j] = 0;
+                }
+            }
+        }
         public override double TrainOnDataSet(SamplesSet samplesSet, int epochsCount, double acceptableError, bool parallel)
         {
             double totalError = double.PositiveInfinity;
+
+            ResetNeuronsCounter();
 
             stopWatch.Restart();
 
@@ -89,12 +164,27 @@ namespace NeuralNetwork1
 
             stopWatch.Stop();
 
+            for (int i = 1; i < neuronsCounter.Length; i++)
+            {
+                for (int j = 0; j < neuronsCounter[i].Length; j++)
+                { // Исправлено условие
+                    Console.Write(neuronsCounter[i][j] + " ");
+                }
+                Console.WriteLine("\n");
+            }
+
+
+            SaveNetworkToFile("C:\\Programming\\GIT_HUB\\Intelligent-Systems-Labs\\lab9\\network.json");
+
             return totalError;
         }
 
         protected override double[] Compute(double[] input)
         {
-            Array.Copy(input, neurons[0], input.Length);
+            //for (int i = 0; i < input.Length; i++) {
+            //    Console.WriteLine(i +": " + input[i]);
+            //}
+             Array.Copy(input, neurons[0], input.Length);
 
             for (int layer = 0; layer < weights.Length; layer++)
             {
@@ -105,6 +195,12 @@ namespace NeuralNetwork1
                     for(int prevNeuron = 0; prevNeuron < neurons[layer].Length; prevNeuron++)
                     {
                         sum += neurons[layer][prevNeuron] * weights[layer][neuron][prevNeuron];
+                    }
+                    if (sum >= 5) {
+                        neuronsCounter[layer + 1][neuron] += 1;
+                    }
+                    else {
+                        neuronsCounter[layer + 1][neuron] = 0;
                     }
                     neurons[layer + 1][neuron] = Sigmoid(sum);
                 });

@@ -62,9 +62,9 @@ def excel_format_to_normal(
     df.to_csv(path_save, encoding="utf-8", index=False)
 
 
-path_to_csv = "./source_csv/music-20.csv"
+path_to_csv = "./source_csv/food.csv"
 path_to_formated_csv = "rules.csv"
-path_to_output_txt = "music-20.txt"
+path_to_output_txt = "food.txt"
 
 # Преобразование формата исходного CSV
 excel_format_to_normal(path_to_csv, path_to_formated_csv)
